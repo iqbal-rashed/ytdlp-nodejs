@@ -1,0 +1,22 @@
+{
+    "name": "ytdlp-nodejs",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/index.js",
+    "types": "dist",
+    "files": [
+        "/dist"
+    ],
+    "scripts": {
+        "build": "tsc -p ."
+    },
+    "keywords": [],
+    "author": "Rashed Iqbal",
+    "license": "ISC",
+    "devDependencies": {
+        "typescript": "^4.7.3"
+    },
+    "dependencies": {
+        "extract-zip": "^2.0.1"
+    }
+}
