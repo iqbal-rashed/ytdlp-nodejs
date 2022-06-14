@@ -1,0 +1,10 @@
+{
+    "ytdlpWin64": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe",
+    "ytdlpWin32": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_x86.exe",
+    "ytdlpMacos": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos",
+    "ytdlpLinux": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp",
+    "ffmpegWin64": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-win64.rar",
+    "ffmpegWin32": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-win32.rar",
+    "ffmpegLinux": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-linux64.rar",
+    "ffmpegMacos": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-macos.rar"
+}

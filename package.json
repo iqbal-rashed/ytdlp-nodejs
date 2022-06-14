@@ -2,21 +2,28 @@
     "name": "ytdlp-nodejs",
     "version": "1.0.0",
     "description": "",
-    "main": "dist/index.js",
-    "types": "dist",
+    "main": "lib/index.js",
+    "types": "lib",
     "files": [
-        "/dist"
+        "/lib"
     ],
     "scripts": {
-        "build": "tsc -p ."
+        "build": "tsc -p .",
+        "postinstall": "node ./lib/install.js"
     },
     "keywords": [],
     "author": "Rashed Iqbal",
     "license": "ISC",
     "devDependencies": {
+        "@types/cli-progress": "^3.11.0",
+        "@types/follow-redirects": "^1.14.1",
+        "@types/node": "^17.0.42",
         "typescript": "^4.7.3"
     },
     "dependencies": {
-        "extract-zip": "^2.0.1"
+        "cli-progress": "^3.11.1",
+        "extract-zip": "^2.0.1",
+        "follow-redirects": "^1.15.1",
+        "zod": "^3.17.3"
     }
 }
