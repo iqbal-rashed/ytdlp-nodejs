@@ -1,8 +1,9 @@
 import { spawn } from "child_process";
-import { ytdlpPath, ffmpegPath } from "./install";
+import { ytdlpPath, ffmpegPath, isNotInstalled } from "./install";
 import getFormatText from "./formatText";
 import { PassThrough } from "stream";
 import EventEmitter from "events";
+import EmitterEvent from "./EmitterEvent";
 import fs from "fs";
 
 import {
@@ -22,7 +23,7 @@ import {
 import { outputType } from "./schema";
 import path from "path";
 
-class Download {
+class _Download {
     private options: DownloadOptions | undefined;
     private url: string;
     private formatText: string;
@@ -71,7 +72,6 @@ class Download {
         } else {
             newFormatText = ["-f", ...formatText.split(" ")];
         }
-        console.log(newFormatText, outputStr);
         const downloadProcess = spawn(ytdlpPath, [
             url,
             "-o",
@@ -175,40 +175,154 @@ class Download {
     }
 }
 
+class Download extends EmitterEvent {
+    url: string;
+    options: DownloadOptions | undefined;
+    formatText: any;
+    constructor(url: string, options?: DownloadOptions) {
+        super();
+        this.url = url;
+        this.options = options;
+        try {
+            this.formatText = getFormatText(options);
+            this.downloadProcess(
+                this.url,
+                this.formatText,
+                this.options?.output
+            );
+        } catch (error: any) {
+            setTimeout(() => {
+                this.emit("error", error);
+            }, 1);
+        }
+    }
+
+    private downloadProcess(
+        url: string,
+        formatText: string,
+        output: OutputType
+    ) {
+        const outputStr = this.getOutput(output);
+        let newFormatText: string[];
+        if (this.options?.filter === "extractaudio") {
+            newFormatText = [...formatText.split(" ")];
+        } else {
+            newFormatText = ["-f", ...formatText.split(" ")];
+        }
+        const downloadProcess = spawn(ytdlpPath, [
+            url,
+            "-o",
+            outputStr,
+            ...newFormatText,
+            "--progress-template",
+            PROGRESS_STRING,
+            "--ffmpeg-location",
+            ffmpegPath,
+        ]);
+        let prevTime: any;
+        downloadProcess.stdout.on("data", (data) => {
+            const dataStr = Buffer.from(data).toString();
+            if (dataStr.includes("brightest")) {
+                if (!prevTime) {
+                    prevTime = Date.now();
+                }
+                const pObj = JSON.parse(dataStr.split("-")[1]);
+                if (pObj.status === "finished") {
+                    const fObj = {
+                        status: "finished",
+                        time: (Date.now() - prevTime) / 1000,
+                        time_str: secondsToHms((Date.now() - prevTime) / 1000),
+                        size: pObj.total,
+                        size_str: formatBytes(pObj.total),
+                    };
+                    this.emit("finished", fObj);
+                    return;
+                }
+                pObj.percent_str = `${percentage(
+                    pObj.downloaded,
+                    pObj.total
+                ).toFixed(2)}%`;
+                pObj.downloaded_str = formatBytes(pObj.downloaded);
+                pObj.total_str = formatBytes(pObj.total);
+                pObj.speed_str = `${formatBytes(pObj.speed)}/s`;
+                pObj.eta_str = secondsToHms(pObj.eta);
+
+                this.emit("progress", pObj);
+            }
+        });
+
+        downloadProcess.stderr.on("data", (err) => {
+            const errStr = Buffer.from(err).toString();
+            throw new Error(errStr);
+        });
+    }
+    private getOutput(output: OutputType): string {
+        let outputStr: string = "";
+        if (!output || output == "default") {
+            return "%(title)s %(height)sp .%(ext)s";
+        }
+        const check = outputType.safeParse(output);
+        if (!check.success) {
+            const errorObj = check.error.issues[0];
+            const errorText = `${errorObj.path} type error, ${errorObj.message}`;
+            throw new TypeError(errorText);
+        }
+
+        const extReg =
+            /(\.aac|\.flac|\.mp3|\.m4a|\.opus|\.vorbis|\.wav\.mkv|\.mp4|\.ogg|\.webm|\.flv)$/g;
+
+        if (typeof output === "string") {
+            // outputStr = output;
+
+            if (fs.lstatSync(output).isDirectory()) {
+                outputStr = path.join(output, "%(title)s %(height)sp .%(ext)s");
+            } else if (extReg.test(output)) {
+                if (!fs.existsSync(path.dirname(output))) {
+                    throw new Error("Output path not valid");
+                }
+            }
+        }
+
+        if (typeof output === "object") {
+            let newObj: { outDir: string; filename: string } = {
+                outDir: "",
+                filename: "",
+            };
+
+            if (!fs.existsSync(output.outDir)) {
+                throw new Error("Output directory not valid");
+            } else {
+                newObj.outDir = output.outDir;
+            }
+
+            if (output.fileName) {
+                if (extReg.test(output.fileName)) {
+                    newObj.filename = output.fileName;
+                } else {
+                    throw new Error("File name not valid");
+                }
+            }
+            outputStr = path.join(
+                newObj.outDir,
+                newObj.filename
+                    ? newObj.filename
+                    : "%(title)s %(height)sp .%(ext)s"
+            );
+        }
+
+        return outputStr ? outputStr : "%(title)s %(height)sp .%(ext)s";
+    }
+}
+
 function download(url: string, options?: DownloadOptions) {
     return new Download(url, options);
 }
 
-class GetStream {
+class GetStream extends EmitterEvent {
     url: string;
     options: FormatOptions | undefined;
     passThrough: PassThrough;
-    on: {
-        (event: "close", listener: () => void): PassThrough;
-        (event: "data", listener: (chunk: any) => void): PassThrough;
-        (event: "end", listener: () => void): PassThrough;
-        (event: "error", listener: (err: Error) => void): PassThrough;
-        (event: "pause", listener: () => void): PassThrough;
-        (event: "readable", listener: () => void): PassThrough;
-        (event: "progress", listener: (...args: any[]) => void): PassThrough;
-        (event: "finished", listener: (...args: any[]) => void): PassThrough;
-        (event: "resume", listener: () => void): PassThrough;
-        (
-            event: string | symbol,
-            listener: (...args: any[]) => void
-        ): PassThrough;
-    };
-    emit: {
-        (event: "close"): boolean;
-        (event: "data", chunk: any): boolean;
-        (event: "end"): boolean;
-        (event: "error", err: Error): boolean;
-        (event: "pause"): boolean;
-        (event: "readable"): boolean;
-        (event: "resume"): boolean;
-        (event: string | symbol, ...args: any[]): boolean;
-    };
-    formatText: string;
+    formatText: any;
     pipe: (
         destination: NodeJS.WritableStream,
         options?: {
@@ -217,19 +331,25 @@ class GetStream {
     ) => void;
 
     constructor(url: string, options?: FormatOptions) {
+        super();
         this.url = url;
         this.options = options;
         this.passThrough = new PassThrough();
-        this.on = this.passThrough.on;
-        this.emit = this.passThrough.emit;
-        this.formatText = getFormatText(options);
         this.pipe = (
             destination: NodeJS.WritableStream,
             options?: { end?: boolean }
         ) => {
             this.passThrough.pipe(destination, options);
         };
-        this.getStream(url, this.formatText);
+        try {
+            this.formatText = getFormatText(options);
+
+            this.getStream(url, this.formatText);
+        } catch (error) {
+            setTimeout(() => {
+                this.emit("error", error);
+            }, 1);
+        }
     }
 
     private getStream(url: string, formatText: string) {
@@ -276,12 +396,15 @@ class GetStream {
 
                 this.emit("progress", pObj);
             }
+            if (errStr.includes("ERROR")) {
+                this.emit("error", new Error(errStr));
+            }
         });
         streamProcess.stdout.pipe(this.passThrough);
     }
 }
 
-function getStream(url: string, options?: FormatOptions) {
+function stream(url: string, options?: FormatOptions) {
     return new GetStream(url, options);
 }
 
@@ -479,6 +602,8 @@ export = {
     getVideoId,
     getThumbnails,
     getFormats,
-    getStream,
+    stream,
     download,
+    isInstalled: !isNotInstalled(),
+    isNotInstalled: isNotInstalled(),
 };

@@ -52,7 +52,7 @@ const ffmpegPath = path.join(
 );
 const ffmpegZip = path.join(__dirname, "bin", path.basename(ffmpegUrl));
 
-function download() {
+function install() {
     if (!fs.existsSync(path.dirname(ytdlpPath))) {
         fs.mkdirSync(path.dirname(ytdlpPath));
     }
@@ -69,14 +69,9 @@ function download() {
                     "Failed to download ffmpeg, Please try again"
                 );
             }
+            console.log("Download Completed, Please re-run the application");
         });
     });
-}
-
-if (!fs.existsSync(ytdlpPath) || !fs.existsSync(ffmpegPath)) {
-    download();
-    // @ts-ignore
-    return;
 }
 
 function downloadFile(
@@ -86,7 +81,9 @@ function downloadFile(
 ) {
     const progressBar = new CliProgress.SingleBar(
         {
-            format: `Download ${savePath} {bar} {percentage}% | {eta_formatted} remaining...`,
+            format: `Download ${path.basename(
+                savePath
+            )} {bar} {percentage}% | {eta_formatted} remaining...`,
         },
         CliProgress.Presets.shades_classic
     );
@@ -114,10 +111,11 @@ function downloadFile(
 
     file.on("finish", async () => {
         progressBar.stop();
-        if (path.extname(savePath) === ".rar") {
+        if (path.extname(savePath) === ".zip") {
             try {
                 const dirname = path.dirname(savePath);
                 await extract(savePath, { dir: dirname });
+                fs.rmSync(savePath);
                 file.close();
                 callback();
             } catch (error: any) {
@@ -137,4 +135,12 @@ function downloadFile(
     });
 }
 
-export { ytdlpPath, ffmpegPath };
+function isNotInstalled() {
+    return !fs.existsSync(ytdlpPath) || !fs.existsSync(ffmpegPath);
+}
+
+if (isNotInstalled()) {
+    install();
+}
+
+export { ytdlpPath, ffmpegPath, isNotInstalled, install };

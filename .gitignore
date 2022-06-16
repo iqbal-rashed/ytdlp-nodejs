@@ -1,7 +1,7 @@
 *.log
 .DS_Store
 node_modules
-
+src/bin
 
 package-lock.json
 lib

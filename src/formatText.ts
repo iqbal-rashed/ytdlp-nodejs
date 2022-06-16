@@ -126,11 +126,11 @@ export default function (options?: FormatOptions | DownloadOptions): string {
         }
     }
 
-    if ((options as any).embedSubs) {
+    if (options && (options as any).embedSubs) {
         formatText = `${formatText} --embed-subs`;
     }
 
-    if ((options as any).embedThumbnail) {
+    if (options && (options as any).embedThumbnail) {
         formatText = `${formatText} --embed-thumbnail`;
     }
 

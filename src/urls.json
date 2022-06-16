@@ -3,8 +3,8 @@
     "ytdlpWin32": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_x86.exe",
     "ytdlpMacos": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos",
     "ytdlpLinux": "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp",
-    "ffmpegWin64": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-win64.rar",
-    "ffmpegWin32": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-win32.rar",
-    "ffmpegLinux": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-linux64.rar",
-    "ffmpegMacos": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/v0.1.0/ffmpeg-macos.rar"
+    "ffmpegWin64": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-win64.zip",
+    "ffmpegWin32": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-win32.zip",
+    "ffmpegLinux": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-linux64.zip",
+    "ffmpegMacos": "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-macos.zip"
 }
