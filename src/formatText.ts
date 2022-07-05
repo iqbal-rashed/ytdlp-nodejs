@@ -111,7 +111,11 @@ export default function (options?: FormatOptions | DownloadOptions): string {
                 break;
 
             default:
-                formatText = `bv*[height<=${options.quality?.slice(0, -1)}]+ba${
+                formatText = `bv*${
+                    options.quality
+                        ? `[height<=` + options.quality?.slice(0, -1) + "]"
+                        : ""
+                }+ba${
                     options.defaultQuality === "highest"
                         ? "/bv*+ba"
                         : options.defaultQuality === "lowest"
