@@ -15,13 +15,13 @@ const urls = {
     ytdlpLinux:
         "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp",
     ffmpegWin64:
-        "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-win64.zip",
+        "https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-release/ffmpeg-win64.zip",
     ffmpegWin32:
-        "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-win32.zip",
+        "https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-release/ffmpeg-win32.zip",
     ffmpegLinux:
-        "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-linux64.zip",
+        "https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-release/ffmpeg-linux64.zip",
     ffmpegMacos:
-        "https://github.com/iqbal-rashed/ffmpeg-ytdlp/releases/download/latest/ffmpeg-macos.zip",
+        "https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-release/ffmpeg-macos.zip",
 };
 
 const BIN_PATH = path.join(path.resolve("node_modules"), "__bin");
