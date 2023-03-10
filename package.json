@@ -1,6 +1,7 @@
 {
     "name": "ytdlp-nodejs",
-    "version": "0.1.2",
+    "description": "A youtube video downloader library for nodejs based on ytdlp",
+    "version": "0.1.3",
     "license": "MIT",
     "main": "./lib/index.js",
     "types": "./lib/types/index.d.ts",

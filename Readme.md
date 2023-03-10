@@ -4,7 +4,7 @@
 </p>
 <h1 align="center"> YTDLP-NODEJS </h1>
 <p align="center">
-  <b >A youtube downloader library for nodejs based on ytdlp</b>
+  <b >A youtube video downloader library for nodejs based on ytdlp</b>
 </p>
 
 <br>
