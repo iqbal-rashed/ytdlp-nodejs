@@ -40,7 +40,7 @@ class VideoDownload extends EmitterEvent {
         const { ytdlpPath } = binPath;
 
         const process = spawn(ytdlpPath, [
-            url,
+            parseUrl,
             ...parseOptions,
             "--progress-template",
             PROGRESS_STRING,

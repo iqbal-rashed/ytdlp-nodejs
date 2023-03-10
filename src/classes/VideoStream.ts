@@ -40,7 +40,7 @@ class VideoStream extends EmitterEvent {
         const { ytdlpPath } = binPath;
 
         const process = spawn(ytdlpPath, [
-            url,
+            parseUrl,
             "-o",
             "-",
             ...parseOptions,
