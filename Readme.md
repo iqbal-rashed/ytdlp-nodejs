@@ -10,13 +10,10 @@
 <br>
 
 ## Description
-Not only python now you can download video using nodejs. It's based on [ytdlp](https://github.com/yt-dlp/yt-dlp) witch is made with python
 
-Features:
+ytdlp-nodejs is a Node.js library that provides functionality to download videos from YouTube, get video streams and thumbnails. It is based on the popular Python library, [ytdlp](https://github.com/yt-dlp/yt-dlp), and has strong TypeScript type support.
+has strong TypeScript type support.
 
-* Download video
-* Get video info, stream, formats, thumbnails
-* Validate video id, url
 
 ## Installation
 
@@ -60,8 +57,19 @@ ytdlp
 
 ## API
 
-### FormatOptions
-`filter:` "videoonly" | "audioonly" | "audioandvideo" | "extractaudio" | "mergevideo"
+
+`$ ytdlp.download(url: string, options?: DownloadOptions)`
+<br>
+
+`$ ytdlp.stream(url: string, options?: StreamOptions):stream`
+<br>
+
+`$ ytdlp.thumbnail(url: string, options?:ThumbnailsOptions): string`
+<br>
+
+
+### DownloadOptions
+`filter:` "videoonly" | "audioonly" | "audioandvideo" | "mergevideo"
 * `filter: "videoonly"` 
   *  `quality:` "2160p" |
     "1440p" |
@@ -73,18 +81,58 @@ ytdlp
     "144p" |
     "highest" |
     "lowest" (default: 'highest')
-  * `format:` "mp4" | "webm" (default:'mp4')
-  * `embedSubs:` boolean (default:false)
-  * `embedThumbnail:` boolean (default:false)
-  * `defaultQuality:` "highest" | "lowest" | "none" (default:'highest')
+  * `format:` "mp4"  | "webm" (default:'mp4')
 
 * `filter: "audioonly"` 
   *  `quality:` "highest" | "lowest" (default:'highest')
 
 * `filter: "audioandvideo"` 
   * `quality:` "highest" | "lowest" (default:'highest')
+  * `format:` "mp4"  | "webm" (default:'mp4')
+
+* `filter: "audioonly"` 
+  * `quality:` 0 to 10 (default:5)
+  * `format:` "aac" | "flac" | "mp3" | "m4a" | "opus" | "vorbis" | "wav" | "alac" (default:'mp3')
+
+* `filter: "mergevideo"` 
+  *  `quality:` "2160p" |
+    "1440p" |
+    "1080p" |
+    "720p" |
+    "480p" |
+    "360p" |
+    "240p" |
+    "144p" |
+    "highest" |
+    "lowest" (default: 'highest')
+  * `format:` "mkv" | "mp4" | "ogg" | "webm" | "flv" (default:'mp4')
   * `embedSubs:` boolean (default:false)
   * `embedThumbnail:` boolean (default:false)
+
+`output:` "string" | "object"
+  * `string` : Path string
+  * `object` : { `outDir:` string, `fileName:` string | 'default' }
+
+
+### StreamOptions
+`filter:` "videoonly" | "audioonly" | "audioandvideo" 
+* `filter: "videoonly"` 
+  *  `quality:` "2160p" |
+    "1440p" |
+    "1080p" |
+    "720p" |
+    "480p" |
+    "360p" |
+    "240p" |
+    "144p" |
+    "highest" |
+    "lowest" (default: 'highest')
+
+* `filter: "audioonly"` 
+  *  `quality:` "highest" | "lowest" (default:'highest')
+
+* `filter: "audioandvideo"` 
+  * `quality:` "highest" | "lowest" (default:'highest')
 
 * `filter: "extractaudio"` 
   * `quality:` 0 to 10 (default:5)
@@ -106,40 +154,13 @@ ytdlp
   * `embedThumbnail:` boolean (default:false)
   * `defaultQuality:` "highest" | "lowest" | "none" (default:'highest')
 
-### DownloadOptions
-* `...FormatOptions`
-* `output:` "string" | "object"
-  * `string` : Path string
-  * `object` : { `outDir:` string, `fileName:` string | 'default' }
-
 ### ThumbnailsOptions
 * `quality`: "max" | "hq" | "mq" | "sd" | "default" (default: 'default')
 * `type`: "jpg" | "webp" (default: 'jpg')
 
 
-`$ ytdlp.download(url: string, options?: DownloadOptions)`
-<br>
 
-`$ ytdlp.stream(url: string, options?: FormatOptions):stream`
-<br>
 
-`$ ytdlp.getFormats(url: string): Promise<object[]> `<br>
-
-`$ ytdlp.getInfo(url: string): Promise<VideoInfo> `<br>
-
-`$ ytdlp.getThumbnails(url: string, options?:ThumbnailsOptions): string`<br>
-
-`$ ytdlp.normalizeUrl(url: string): string`<br>
-
-`$ ytdlp.getVideoId(url: string): string`<br>
-
-`$ ytdlp.getPlaylistId(url: string): string`<br>
-
-`$ ytdlp.validateUrl(url: string): boolean`<br>
-
-`$ ytdlp.validateId(id: string): boolean`
-
-<br>
 
 ## Contribution
 If you want to contribute or report any bug, you welcome

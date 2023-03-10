@@ -57,11 +57,13 @@ export type StreamOptions<F extends StreamKeyWord> = {
 
 export type DownloadKeyWord = keyof DownloadQualityOptions;
 
-export type DownloadOptions<F extends DownloadKeyWord> = (F extends "audioonly"
+export type DownloadOptions<F extends DownloadKeyWord> = (F extends "mergevideo"
     ? {
           filter: F;
           quality?: DownloadQualityOptions[F];
           format?: DownloadFormatOptions[F];
+          embedSubs?: boolean;
+          embedThumbnail?: boolean;
           command?: string[];
       }
     : {
