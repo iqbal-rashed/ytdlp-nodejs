@@ -1,6 +1,6 @@
 <br>
 <p align="center">
-  <img width="150" src="./logo.png">
+  <img width="150" src="https://github.com/iqbal-rashed/ytdlp-nodejs/raw/main/logo.png">
 </p>
 <h1 align="center"> YTDLP-NODEJS </h1>
 <p align="center">
