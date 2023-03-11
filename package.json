@@ -1,7 +1,7 @@
 {
     "name": "ytdlp-nodejs",
     "description": "A youtube video downloader library for nodejs based on ytdlp",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "license": "MIT",
     "main": "./lib/index.js",
     "types": "./lib/types/index.d.ts",
@@ -13,6 +13,25 @@
         "build": "shx rm -rf ./lib && tsc -p .",
         "example": "ts-node ./example.ts"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/iqbal-rashed/ytdlp-nodejs.git"
+    },
+    "author": "Rashed Iqbal",
+    "bugs": {
+        "url": "https://github.com/iqbal-rashed/ytdlp-nodejs/issues"
+    },
+    "homepage": "https://github.com/iqbal-rashed/ytdlp-nodejs#readme",
+    "keywords": [
+        "ytdlp",
+        "youtube downloader",
+        "ytdlp-nodejs",
+        "youtube-thumbnails",
+        "typescript",
+        "nodejs",
+        "youtube video",
+        "video"
+    ],
     "devDependencies": {
         "@types/cli-progress": "^3.11.0",
         "@types/follow-redirects": "^1.14.1",
