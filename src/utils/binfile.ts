@@ -39,16 +39,16 @@ export function getBinPath(): BinPathType | undefined {
             ytdlp = "yt-dlp.exe";
             ffmpeg = "ffmpeg.exe";
         } else if (os.arch() === "x32") {
-            ytdlp == "yt-dlp_x86.exe";
+            ytdlp = "yt-dlp_x86.exe";
             ffmpeg = "ffmpeg.exe";
         } else {
             throw new Error("Your os is not supported");
         }
     } else if (os.platform() === "darwin") {
-        ytdlp == "yt-dlp_macos";
+        ytdlp = "yt-dlp_macos";
         ffmpeg = "ffmpeg";
     } else if (os.platform() === "linux") {
-        ytdlp == "yt-dlp";
+        ytdlp = "yt-dlp";
         ffmpeg = "ffmpeg";
     } else {
         throw new Error("Your os is not supported");
