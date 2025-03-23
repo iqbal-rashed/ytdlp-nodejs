@@ -314,6 +314,7 @@ export interface ArgsOptions {
   extractorArgs?: { [key: string]: string[] };
 
   ignoreDynamicMpd?: boolean;
+  dumpPages?: boolean;
 
   noHlsSplitDiscontinuity?: boolean;
 
