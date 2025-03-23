@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsup",
     "test": "jest",
-    "lint": "eslint --ext .js,.ts ./src",
+    "lint": "eslint --ext .js,.ts ./src/**/*",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
     "postinstall": "node scripts/download.js",
     "prepare": "husky"
