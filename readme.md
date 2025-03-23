@@ -1,91 +1,162 @@
-# yt-dlp-wrapper
+> Important Note: This is currently on beta. If someone can help me to create this docs.
+
+# ytdlp-nodejs
 
 A TypeScript wrapper for the yt-dlp executable that supports both ESM and CommonJS.
 
 ## Installation
 
-```bash
-npm install yt-dlp-wrapper
-```
+Before installing, ensure you have yt-dlp installed and available in your PATH. You can download it from [yt-dlp GitHub](https://github.com/yt-dlp/yt-dlp).
 
-Make sure you have yt-dlp installed and available in your PATH. You can download it from [https://github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp).
+To install the package, run:
+
+```bash
+npm install ytdlp-nodejs
+```
 
 ## Usage
 
-### ESM (ES Modules)
+### Importing the Package
 
 ```javascript
-import ytDlp, { YtDlp } from 'yt-dlp-wrapper';
+import { YtDlp } from 'ytdlp-nodejs';
 
-// Using the default instance
-async function example() {
+const ytdlp = new YtDlp();
+```
+
+### Downloading a Video
+
+```javascript
+async function downloadVideo() {
   try {
-    // Get video info
-    const info = await ytDlp.getInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-    console.log(`Video title: ${info.title}`);
-    
-    // Download a video
-    await ytDlp.download({
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      format: 'best',
-      output: '%(title)s.%(ext)s'
-    });
-    
-    // Extract audio only
-    await ytDlp.downloadAudio('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
-      audioFormat: 'mp3',
-      output: '%(title)s.%(ext)s'
-    });
+    const output = await ytdlp.download(
+      'https://www.youtube.com/watch?v=_AL4IwHuHlY',
+      {
+        onProgress: (progress) => {
+          console.log(progress);
+        },
+        // others args
+      }
+    );
+    console.log('Download completed:', output);
   } catch (error) {
     console.error('Error:', error);
   }
 }
+
+downloadVideo();
 ```
 
-### CommonJS
+### Streaming a Video
 
 ```javascript
-const { default: ytDlp, YtDlp } = require('yt-dlp-wrapper');
+import { createWriteStream } from 'fs';
 
-// Using the default instance
-async function example() {
+async function streamVideo() {
   try {
-    // Get video info
-    const info = await ytDlp.getInfo('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
-    console.log(`Video title: ${info.title}`);
-    
-    // Download a video
-    await ytDlp.download({
-      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-      format: 'best',
-      output: '%(title)s.%(ext)s'
-    });
+    const st = createWriteStream('video.mp4');
+
+    const ytdlpStream = ytdlp.stream(
+      'https://www.youtube.com/watch?v=_AL4IwHuHlY',
+      {
+        onProgress: (progress) => {
+          console.log(progress);
+        },
+        // others args
+      }
+    );
+
+    await ytdlpStream.promisePipe(st);
+
+    console.log('Download completed');
   } catch (error) {
     console.error('Error:', error);
   }
 }
-```
 
-### Creating a Custom Instance
-
-You can create your own instance with a custom path to the yt-dlp executable:
-
-```javascript
-import { YtDlp } from 'yt-dlp-wrapper';
-
-const customYtDlp = new YtDlp('/path/to/yt-dlp');
-
-// Now use customYtDlp instead of the default instance
+streamVideo();
 ```
 
 ## API
 
-### YtDlp Class
+### `new YtDlp(options?: YtDlpOptions)`
 
-#### Constructor
+Creates a new instance of `YtDlp`.
 
-```typescript
-constructor(binaryPath?: string)
+#### Parameters:
+
+- `options.binaryPath` (optional): Custom path to the `yt-dlp` binary.
+- `options.ffmpegPath` (optional): Custom path to the `ffmpeg` binary.
+
+---
+
+### `checkInstallation(): Promise<boolean>`
+
+Checks if `yt-dlp` is installed and accessible.
+
+```javascript
+const isInstalled = await ytdlp.checkInstallation();
+console.log(isInstalled ? 'yt-dlp is installed' : 'yt-dlp is not installed');
 ```
 
-- `binary
+---
+
+### `download(url: string, options?: DownloadOptions): Promise<string>`
+
+Downloads a video from the given URL.
+
+#### Options: All the options are available https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options
+
+- `onProgress` (optional): Callback function to monitor download progress.
+
+```javascript
+await ytdlp.download('https://www.youtube.com/watch?v=example');
+```
+
+---
+
+### `stream(url: string, options?: StreamOptions): PipeResponse`
+
+Streams a video and pipes the output.
+
+#### Options: All the options are available https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options
+
+- `onProgress` (optional): Callback function to monitor stream progress.
+
+```javascript
+const st = createWriteStream('video.mp4');
+const ytdlpStream = ytdlp.stream('https://www.youtube.com/watch?v=example');
+await ytdlpStream.promisePipe(st);
+```
+
+---
+
+### `getInfo(url: string): Promise<VideoInfo>`
+
+Fetches metadata of the given video.
+
+```javascript
+const info = await ytdlp.getInfo('https://www.youtube.com/watch?v=example');
+console.log(info);
+```
+
+---
+
+### `getThumbnails(url: string): Promise<VideoThumbnail[]>`
+
+Retrieves available thumbnails for the given video.
+
+```javascript
+const thumbnails = await ytdlp.getThumbnails(
+  'https://www.youtube.com/watch?v=example'
+);
+console.log(thumbnails);
+```
+
+## Contributing
+
+Contributions are welcome! Feel free to submit a pull request or open an issue on GitHub.
+
+## License
+
+This project is licensed under the MIT License.

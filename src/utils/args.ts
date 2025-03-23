@@ -365,18 +365,6 @@ export function createArgs(options: ArgsOptions): string[] {
   if (options.writeWeblocLink) args.push('--write-webloc-link');
   if (options.writeLnkLink) args.push('--write-lnk-link');
 
-  // Verbosity and Simulation Options
-  if (options.quiet) args.push('--quiet');
-  if (options.noWarnings) args.push('--no-warnings');
-  if (options.simulate) args.push('--simulate');
-  if (options.noSimulate) args.push('--no-simulate');
-  if (options.ignoreNoFormatsError) args.push('--ignore-no-formats-error');
-  if (options.ignoreEoFError) args.push('--ignore-eof-error');
-  if (options.noIgnoreEoFError) args.push('--no-ignore-eof-error');
-
-  if (options.noColor) args.push('--no-color');
-  if (options.printTraffic) args.push('--print-traffic');
-
   // Workarounds
 
   if (options.userAgent) args.push('--user-agent', options.userAgent);

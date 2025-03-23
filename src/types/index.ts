@@ -324,38 +324,13 @@ export interface ArgsOptions {
   headers?: { [key: string]: string };
   debugPrintCommandLine?: boolean;
 
-  // Other Options
-  noEnvConfig?: boolean; // --no-env-config
-  configLocation?: string; // --config-location
-  igoreConfig?: boolean; // --ignore-config
-
-  noColors?: boolean; // --no-colors
-
-  // Hidden Options
-  forceGenericExtractor?: boolean; // --force-generic-extractor
-  dumpPages?: boolean; // --dump-pages
-  youtubeSkipDashManifest?: boolean; // --youtube-skip-dash-manifest
-  youtubeIncludeV?: boolean; // --youtube-include-dash-manifest
-
   // Information Options
 
-  resetSystime?: boolean; // --reset-systime
-  dump?: boolean; // --dump, --print (aliased)
   writePages?: boolean; // --write-pages
-  printTrafficDetails?: boolean; // --print-traffic-details
-
-  dumpOptions?: boolean; // --dump-options
-  getUrl?: boolean; // --get-url
-  getId?: boolean; // --get-id
-  getThumbnail?: boolean; // --get-thumbnail
-  getDuration?: boolean; // --get-duration
-  getFilename?: boolean; // --get-filename
-  getFormat?: boolean; // --get-format
 
   // Standard Options
   listFormats?: boolean; // -F, --list-formats
   listThumbnails?: boolean; // --list-thumbnails
-  getDescription?: boolean; // --get-description
 
   // Additional raw options
   additionalOptions?: string[];
