@@ -11,7 +11,7 @@ Before installing, ensure you have yt-dlp installed and available in your PATH. 
 To install the package, run:
 
 ```bash
-npm i ytdlp-nodejs@2.0.1-beta
+npm i ytdlp-nodejs@2.0.2-beta
 ```
 
 ## Usage
