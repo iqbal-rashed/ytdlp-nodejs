@@ -29,7 +29,7 @@ const ytdlp = new YtDlp();
 ```javascript
 async function downloadVideo() {
   try {
-    const output = await ytdlp.download(
+    const output = await ytdlp.downloadAsync(
       'https://www.youtube.com/watch?v=_AL4IwHuHlY',
       {
         onProgress: (progress) => {
