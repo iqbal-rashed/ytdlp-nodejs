@@ -3,7 +3,7 @@ import fs from 'fs';
 
 import { downloadFile } from './request';
 import AdmZip from 'adm-zip';
-import tar from 'tar';
+import * as tar from 'tar';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest';
