@@ -14,11 +14,12 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsup ./src/scripts/download.ts",
+    "build": "tsup && tsup ./src/scripts/download.ts -d ./dist/scripts --no-config --minify",
     "test": "jest",
     "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
-    "postinstall": "node dist/scripts/download.js",
+    "download": "node ./dist/scripts/download.js",
+    "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run download', { stdio: 'inherit' });\"",
     "prepare": "husky"
   },
   "keywords": [

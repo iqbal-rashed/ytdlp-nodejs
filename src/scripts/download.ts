@@ -3,7 +3,7 @@ import * as path from 'path';
 import { downloadFile } from '../utils/request';
 
 const DOWNLOAD_BASE_URL =
-  'https://github.com/yt-dlp/yt-dlp/releases/download/latest';
+  'https://github.com/yt-dlp/yt-dlp/releases/latest/download';
 
 const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
   win32: {
@@ -41,7 +41,10 @@ async function downloadYtDlp(): Promise<string> {
   const binDir = path.join(__dirname, '..', '..', 'bin');
   const outputPath = path.join(binDir, fileName);
 
-  console.log(`Downloading yt-dlp...`);
+  const isExists = fs.existsSync(outputPath);
+  if (isExists) return outputPath;
+
+  console.log(`Downloading yt-dlp...`, downloadUrl);
 
   if (!fs.existsSync(binDir)) {
     fs.mkdirSync(binDir, { recursive: true });
