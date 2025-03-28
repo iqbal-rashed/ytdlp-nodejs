@@ -1,6 +1,6 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.0.2-beta",
+  "version": "2.0.3-beta",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -16,9 +16,9 @@
   "scripts": {
     "build": "tsup",
     "test": "jest",
-    "lint": "eslint --ext .js,.ts ./src/**/*",
+    "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
-    "postinstall": "node scripts/download.js",
+    "postinstall": "node dist/scripts/download.js",
     "prepare": "husky"
   },
   "keywords": [
@@ -41,6 +41,7 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.23.0",
+    "@types/adm-zip": "^0.5.7",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",
     "eslint": "^9.23.0",
@@ -54,11 +55,13 @@
     "typescript-eslint": "^8.27.0"
   },
   "files": [
-    "dist/**/*",
-    "scripts/**/*"
+    "dist/**/*"
   ],
   "engines": {
     "node": ">=16.0.0"
   },
-  "packageManager": "yarn@1.22.22"
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "tar": "^7.4.3"
+  }
 }

@@ -5,7 +5,7 @@ const ytdlp = new YtDlp();
 
 async function downloadVideo() {
   try {
-    const output = await ytdlp.download(
+    const output = await ytdlp.downloadAsync(
       'https://www.youtube.com/watch?v=_AL4IwHuHlY',
       {
         onProgress: (progress) => {
@@ -32,7 +32,7 @@ async function streamVideo() {
       }
     );
 
-    await ytdlpStream.promisePipe(st);
+    await ytdlpStream.pipeAsync(st);
 
     console.log('Downloaded');
   } catch (error) {
@@ -40,5 +40,30 @@ async function streamVideo() {
   }
 }
 
-downloadVideo();
-streamVideo();
+async function execVideo() {
+  const s = ytdlp.download('https://www.youtube.com/watch?v=_AL4IwHuHlY');
+
+  s.on('progress', (d) => {
+    console.log(d);
+  });
+}
+
+async function isInstallation() {
+  try {
+    const isInstalled = await ytdlp.checkInstallationAsync({ ffmpeg: true });
+    console.log(isInstalled);
+  } catch (error) {
+    console.log('test', error.message);
+  }
+}
+
+ytdlp.downloadFFmpeg().then(async () => {
+  try {
+    await isInstallation();
+    await downloadVideo();
+    await streamVideo();
+    await execVideo();
+  } catch (error) {
+    console.log(error);
+  }
+});

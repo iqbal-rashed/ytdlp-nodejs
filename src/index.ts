@@ -1,4 +1,4 @@
-import { exec, spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -19,14 +19,22 @@ import { extractThumbnails } from './utils/thumbnails';
 import { parseDownloadOptions, parseStreamOptions } from './utils/format';
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
+import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
 
 export class YtDlp {
   private readonly binaryPath: string;
   private readonly ffmpegPath?: string;
 
+  // done
   constructor(opt?: YtDlpOptions) {
     this.binaryPath = opt?.binaryPath || this.getDefaultBinaryPath();
     this.ffmpegPath = opt?.ffmpegPath;
+
+    const ffmpegBinary = findFFmpegBinary();
+
+    if (ffmpegBinary) {
+      this.ffmpegPath = ffmpegBinary;
+    }
 
     if (!fs.existsSync(this.binaryPath))
       throw new Error('yt-dlp binary not found');
@@ -37,6 +45,7 @@ export class YtDlp {
     }
   }
 
+  // done
   private getDefaultBinaryPath(): string {
     return path.join(
       __dirname,
@@ -46,13 +55,94 @@ export class YtDlp {
     );
   }
 
-  public async checkInstallation(): Promise<boolean> {
-    return new Promise((resolve) => {
-      exec(`${this.binaryPath} --version`, (error) => resolve(!error));
+  // done
+  public async checkInstallationAsync(options?: {
+    ffmpeg?: boolean;
+  }): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      if (options?.ffmpeg && !this.ffmpegPath) {
+        return reject(new Error('FFmpeg path is not set'));
+      }
+
+      const binaryProcess = spawn(this.binaryPath, ['--version']);
+      const ffmpegProcess = options?.ffmpeg
+        ? spawn(this.ffmpegPath!, ['--version'])
+        : null;
+
+      let binaryExists = false;
+      let ffmpegExists = !options?.ffmpeg;
+
+      binaryProcess.on('error', () => (binaryExists = false));
+      binaryProcess.on('exit', (code) => {
+        binaryExists = code === 0;
+        if (binaryExists && ffmpegExists) resolve(true);
+      });
+
+      if (ffmpegProcess) {
+        ffmpegProcess.on('error', () => (ffmpegExists = false));
+        ffmpegProcess.on('exit', (code) => {
+          ffmpegExists = code === 0;
+          if (binaryExists && ffmpegExists) resolve(true);
+        });
+      }
     });
   }
 
-  private async execute(
+  // done
+  public checkInstallation(options?: { ffmpeg?: boolean }): boolean {
+    if (options?.ffmpeg && !this.ffmpegPath) {
+      throw new Error('FFmpeg path is not set');
+    }
+
+    const binaryResult = spawnSync(this.binaryPath, ['--version'], {
+      stdio: 'ignore',
+    });
+    const ffmpegResult = options?.ffmpeg
+      ? spawnSync(this.ffmpegPath!, ['--version'], { stdio: 'ignore' })
+      : { status: 0 };
+    return binaryResult.status === 0 && ffmpegResult.status === 0;
+  }
+
+  // done
+  public async execAsync(
+    url: string,
+    options?: ArgsOptions & { onData?: (d: string) => void }
+  ) {
+    const args = this.buildArgs(url, options || {});
+    return this._executeAsync(args, options?.onData);
+  }
+
+  // done
+  public exec(url: string, options?: ArgsOptions) {
+    const args = this.buildArgs(url, options || {}, true);
+    return this._execute(args);
+  }
+
+  // done
+  private _execute(args: string[]) {
+    const ytDlpProcess = spawn(this.binaryPath, args);
+
+    ytDlpProcess.stderr.on('data', (chunk) => {
+      const str = Buffer.from(chunk).toString();
+      const result = stringToProgress(str);
+      if (result) {
+        ytDlpProcess.emit('progress', result);
+      }
+    });
+
+    ytDlpProcess.stdout.on('data', (data) => {
+      const dataStr = Buffer.from(data).toString();
+      const result = stringToProgress(dataStr);
+      if (result) {
+        ytDlpProcess.emit('progress', result);
+      }
+    });
+
+    return ytDlpProcess;
+  }
+
+  // done
+  private async _executeAsync(
     args: string[],
     onData?: (d: string) => void,
     passThrough?: PassThrough
@@ -91,10 +181,11 @@ export class YtDlp {
     });
   }
 
+  // done
   private buildArgs(
     url: string,
     opt: ArgsOptions,
-    onProgress?: (p: VideoProgress) => void,
+    onProgress?: ((p: VideoProgress) => void) | boolean,
     extra?: string[]
   ): string[] {
     const args = createArgs(opt);
@@ -113,7 +204,19 @@ export class YtDlp {
     return args.concat(url);
   }
 
-  public async download<F extends DownloadKeyWord>(
+  // done
+  public download<F extends DownloadKeyWord>(
+    url: string,
+    options?: Omit<DownloadOptions<F>, 'onProgress'>
+  ) {
+    const { format, ...opt } = options || {};
+    const args = this.buildArgs(url, opt, true, parseDownloadOptions(format));
+
+    return this._execute(args);
+  }
+
+  // done
+  public async downloadAsync<F extends DownloadKeyWord>(
     url: string,
     options?: DownloadOptions<F>
   ): Promise<string> {
@@ -125,7 +228,7 @@ export class YtDlp {
       parseDownloadOptions(format)
     );
 
-    return this.execute(args, (data) => {
+    return this._executeAsync(args, (data) => {
       const progress = stringToProgress(data);
       if (progress) {
         onProgress?.(progress);
@@ -133,6 +236,7 @@ export class YtDlp {
     });
   }
 
+  // done
   public stream<F extends StreamKeyWord>(
     url: string,
     options?: StreamOptions<F>
@@ -146,7 +250,7 @@ export class YtDlp {
 
     const passThrough = new PassThrough();
 
-    this.execute(
+    this._executeAsync(
       args,
       (data) => {
         const progress = stringToProgress(data);
@@ -160,7 +264,7 @@ export class YtDlp {
     return {
       pipe: (destination: NodeJS.WritableStream, options?: { end?: boolean }) =>
         passThrough.pipe(destination, options),
-      promisePipe: (
+      pipeAsync: (
         destination: NodeJS.WritableStream,
         options?: { end?: boolean }
       ) => {
@@ -173,15 +277,31 @@ export class YtDlp {
     };
   }
 
-  public async getInfo(url: string): Promise<VideoInfo> {
+  // done
+  public async getInfoAsync(url: string): Promise<VideoInfo> {
     const args = ['--dump-json', '--quiet', url];
-    const execResult = await this.execute(args);
+    const execResult = await this._executeAsync(args);
     return JSON.parse(execResult) as VideoInfo;
   }
 
-  public async getThumbnails(url: string): Promise<VideoThumbnail[]> {
+  // done
+  public async getThumbnailsAsync(url: string): Promise<VideoThumbnail[]> {
     const args = ['--list-thumbnails', '--quiet', url];
-    const execResult = await this.execute(args);
+    const execResult = await this._executeAsync(args);
     return extractThumbnails(execResult);
   }
+
+  public async downloadFFmpeg() {
+    return downloadFFmpeg();
+  }
 }
+
+export type {
+  ArgsOptions,
+  DownloadOptions,
+  StreamOptions,
+  VideoInfo,
+  VideoProgress,
+  VideoThumbnail,
+  YtDlpOptions,
+};

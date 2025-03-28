@@ -465,7 +465,7 @@ export type PipeResponse = {
       end?: boolean;
     }
   ) => NodeJS.WritableStream;
-  promisePipe: (
+  pipeAsync: (
     destination: NodeJS.WritableStream,
     options?: {
       end?: boolean;

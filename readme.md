@@ -1,18 +1,18 @@
-> Important Note: This is currently on beta. If someone can help me to create this docs.
+> Important Note: Version 2 is finally here! 🎉 This is still in beta, so please feel free to submit feature requests.
 
 # ytdlp-nodejs
 
-A TypeScript wrapper for the yt-dlp executable that supports both ESM and CommonJS.
+This Node.js module is a wrapper for `yt-dlp`, a powerful video downloader, that allows you to download, stream, and fetch metadata for videos from various websites. The wrapper automatically downloads the `yt-dlp` binary and provides a simple interface for using its features directly within a Node.js environment.
 
 ## Installation
 
-Before installing, ensure you have yt-dlp installed and available in your PATH. You can download it from [yt-dlp GitHub](https://github.com/yt-dlp/yt-dlp).
-
-To install the package, run:
+To install the `yt-dlp` Node.js wrapper, run:
 
 ```bash
 npm i ytdlp-nodejs@2.0.2-beta
 ```
+
+This package will automatically download the `yt-dlp` binary for you, eliminating the need for manual installation.
 
 ## Usage
 
@@ -66,7 +66,7 @@ async function streamVideo() {
       }
     );
 
-    await ytdlpStream.promisePipe(st);
+    await ytdlpStream.pipeAsync(st);
 
     console.log('Download completed');
   } catch (error) {
@@ -77,86 +77,230 @@ async function streamVideo() {
 streamVideo();
 ```
 
-## API
+## Class: `YtDlp`
 
-### `new YtDlp(options?: YtDlpOptions)`
+### `constructor(opt?)`
 
-Creates a new instance of `YtDlp`.
+The constructor initializes the `YtDlp` object.
 
 #### Parameters:
 
-- `options.binaryPath` (optional): Custom path to the `yt-dlp` binary.
-- `options.ffmpegPath` (optional): Custom path to the `ffmpeg` binary.
+- `opt` (optional): Options to configure the paths for `yt-dlp` and `ffmpeg`.
+  - `binaryPath`: Path to the `yt-dlp` binary (optional).
+  - `ffmpegPath`: Path to the `ffmpeg` binary (optional).
 
----
+#### Example:
 
-### `checkInstallation(): Promise<boolean>`
-
-Checks if `yt-dlp` is installed and accessible.
-
-```javascript
-const isInstalled = await ytdlp.checkInstallation();
-console.log(isInstalled ? 'yt-dlp is installed' : 'yt-dlp is not installed');
+```typescript
+const ytDlp = new YtDlp({
+  binaryPath: 'path-to-yt-dlp',
+  ffmpegPath: 'path-to-ffmpeg',
+});
 ```
 
----
+### `checkInstallationAsync(options?): Promise<boolean>`
 
-### `download(url: string, options?: DownloadOptions): Promise<string>`
+Asynchronously checks if both `yt-dlp` and optionally `ffmpeg` binaries are installed and available.
+
+#### Parameters:
+
+- `options` (optional): An object to specify if `ffmpeg` should also be checked.
+  - `ffmpeg`: If set to `true`, it checks if `ffmpeg` is installed.
+
+#### Returns:
+
+- `Promise<boolean>`: Resolves to `true` if both `yt-dlp` and `ffmpeg` are installed (if required), otherwise `false`.
+
+#### Example:
+
+```typescript
+const isInstalled = await ytDlp.checkInstallationAsync({ ffmpeg: true });
+```
+
+### `checkInstallation(options?): boolean`
+
+Synchronously checks if both `yt-dlp` and optionally `ffmpeg` binaries are installed and available.
+
+#### Parameters:
+
+- `options` (optional): An object to specify if `ffmpeg` should also be checked.
+  - `ffmpeg`: If set to `true`, it checks if `ffmpeg` is installed.
+
+#### Returns:
+
+- `boolean`: `true` if both `yt-dlp` and `ffmpeg` are installed (if required), otherwise `false`.
+
+#### Example:
+
+```typescript
+const isInstalled = ytDlp.checkInstallation({ ffmpeg: true });
+```
+
+### `execAsync(url, options?): Promise<string>`
+
+Asynchronously executes `yt-dlp` with the provided URL and options.
+
+#### Parameters:
+
+- `url`: The URL of the video to download or stream.
+- `options` (optional): Additional options to pass to `yt-dlp`:
+  - `onData`: A callback that is triggered when data is received from `yt-dlp`.
+
+#### Returns:
+
+- `Promise<string>`: Resolves to the output of the `yt-dlp` command.
+
+#### Example:
+
+```typescript
+const result = await ytDlp.execAsync(
+  'https://www.youtube.com/watch?v=exampleVideoID'
+);
+```
+
+### `exec(url, options?): ChildProcess `
+
+Synchronously executes `yt-dlp` with the provided URL and options.
+
+#### Parameters:
+
+- `url`: The URL of the video to download or stream.
+- `options` (optional): Additional options to pass to `yt-dlp`.
+
+#### Returns:
+
+- `ChildProcess`: The spawned child process running `yt-dlp`.
+
+#### Example:
+
+```typescript
+const ytDlpProcess = ytDlp.exec(
+  'https://www.youtube.com/watch?v=exampleVideoID'
+);
+```
+
+### `download(url, options?): ChildProcess`
 
 Downloads a video from the given URL.
 
-#### Options: All the options are available https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options
+#### Parameters:
 
-- `onProgress` (optional): Callback function to monitor download progress.
+- `url`: The URL of the video to download.
+- `options` (optional): Additional options for downloading, such as video format.
 
-```javascript
-await ytdlp.download('https://www.youtube.com/watch?v=example');
+#### Returns:
+
+- `ChildProcess`: The spawned child process running `yt-dlp`.
+
+#### Example:
+
+```typescript
+ytDlp.download('https://www.youtube.com/watch?v=exampleVideoID', {
+  format: 'bestvideo+bestaudio',
+});
 ```
 
----
+### `downloadAsync(url, options?): Promise<string>`
 
-### `stream(url: string, options?: StreamOptions): PipeResponse`
+Asynchronously downloads a video from the given URL.
 
-Streams a video and pipes the output.
+#### Parameters:
 
-#### Options: All the options are available https://github.com/yt-dlp/yt-dlp?tab=readme-ov-file#usage-and-options
+- `url`: The URL of the video to download.
+- `options` (optional): Additional options for downloading, such as video format and a progress callback.
 
-- `onProgress` (optional): Callback function to monitor stream progress.
+#### Returns:
 
-```javascript
-const st = createWriteStream('video.mp4');
-const ytdlpStream = ytdlp.stream('https://www.youtube.com/watch?v=example');
-await ytdlpStream.promisePipe(st);
-```
+- `Promise<string>`: Resolves to the output of the `yt-dlp` command.
 
----
+#### Example:
 
-### `getInfo(url: string): Promise<VideoInfo>`
-
-Fetches metadata of the given video.
-
-```javascript
-const info = await ytdlp.getInfo('https://www.youtube.com/watch?v=example');
-console.log(info);
-```
-
----
-
-### `getThumbnails(url: string): Promise<VideoThumbnail[]>`
-
-Retrieves available thumbnails for the given video.
-
-```javascript
-const thumbnails = await ytdlp.getThumbnails(
-  'https://www.youtube.com/watch?v=example'
+```typescript
+const result = await ytDlp.downloadAsync(
+  'https://www.youtube.com/watch?v=exampleVideoID',
+  {
+    format: 'bestvideo+bestaudio',
+  }
 );
-console.log(thumbnails);
+```
+
+### `stream(url, options?): PipeResponse`
+
+Streams a video from the given URL.
+
+#### Parameters:
+
+- `url`: The URL of the video to stream.
+- `options` (optional): Additional options for streaming, such as video format and a progress callback.
+
+#### Returns:
+
+- `pipe`: A function that pipes the stream to a writable stream.
+- `pipeAsync`: A function that pipes the stream asynchronously to a writable stream.
+
+#### Example:
+
+```typescript
+const ytdlpStream = ytDlp.stream(
+  'https://www.youtube.com/watch?v=exampleVideoID'
+);
+ytdlpStream.pipe(destinationStream);
+```
+
+### `getInfoAsync(url): Promise<VideoInfo>`
+
+Fetches detailed information about a video asynchronously.
+
+#### Parameters:
+
+- `url`: The URL of the video.
+
+#### Returns:
+
+- `Promise<VideoInfo>`: Resolves to a `VideoInfo` object containing metadata about the video.
+
+#### Example:
+
+```typescript
+const info = await ytDlp.getInfoAsync(
+  'https://www.youtube.com/watch?v=exampleVideoID'
+);
+```
+
+### `getThumbnailsAsync(url): Promise<VideoThumbnail[]>`
+
+Fetches all available thumbnails for a video asynchronously.
+
+#### Parameters:
+
+- `url`: The URL of the video.
+
+#### Returns:
+
+- `Promise<VideoThumbnail[]>`: Resolves to an array of `VideoThumbnail` objects.
+
+#### Example:
+
+```typescript
+const thumbnails = await ytDlp.getThumbnailsAsync(
+  'https://www.youtube.com/watch?v=exampleVideoID'
+);
+```
+
+### `downloadFFmpeg(): Promise<void>`
+
+Downloads `ffmpeg` using a predefined method.
+
+#### Returns:
+
+- `Promise<void>`: Resolves once the download is complete.
+
+#### Example:
+
+```typescript
+await ytDlp.downloadFFmpeg();
 ```
 
 ## Contributing
 
 Contributions are welcome! Feel free to submit a pull request or open an issue on GitHub.
-
-## License
-
-This project is licensed under the MIT License.
