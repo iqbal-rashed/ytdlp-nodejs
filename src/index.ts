@@ -106,10 +106,22 @@ export class YtDlp {
   // done
   public async execAsync(
     url: string,
-    options?: ArgsOptions & { onData?: (d: string) => void }
+    options?: ArgsOptions & {
+      onData?: (d: string) => void;
+      onProgress?: (p: VideoProgress) => void;
+    }
   ) {
     const args = this.buildArgs(url, options || {});
-    return this._executeAsync(args, options?.onData);
+    const onData = (d: string) => {
+      options?.onData?.(d);
+      if (options?.onProgress) {
+        const result = stringToProgress(d);
+        if (result) {
+          options.onProgress?.(result);
+        }
+      }
+    };
+    return this._executeAsync(args, onData);
   }
 
   // done

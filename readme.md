@@ -145,6 +145,7 @@ Asynchronously executes `yt-dlp` with the provided URL and options.
 - `url`: The URL of the video to download or stream.
 - `options` (optional): Additional options to pass to `yt-dlp`:
   - `onData`: A callback that is triggered when data is received from `yt-dlp`.
+  - `onProgress`: An callback function to track progess of downloading.
 
 #### Returns:
 
@@ -170,6 +171,7 @@ Synchronously executes `yt-dlp` with the provided URL and options.
 #### Returns:
 
 - `ChildProcess`: The spawned child process running `yt-dlp`.
+  - `on('progress')`: An event to track progess of downloading.
 
 #### Example:
 
@@ -187,10 +189,12 @@ Downloads a video from the given URL.
 
 - `url`: The URL of the video to download.
 - `options` (optional): Additional options for downloading, such as video format.
+  - `format`: String | [Format Options](#format-for-download).
 
 #### Returns:
 
 - `ChildProcess`: The spawned child process running `yt-dlp`.
+  - `on('progress')`: An event to track progess of downloading.
 
 #### Example:
 
@@ -208,6 +212,8 @@ Asynchronously downloads a video from the given URL.
 
 - `url`: The URL of the video to download.
 - `options` (optional): Additional options for downloading, such as video format and a progress callback.
+  - `format`: String | [Format Options](#format-for-download).
+  - `onProgress`: An callback function to track progess of downloading.
 
 #### Returns:
 
@@ -232,6 +238,8 @@ Streams a video from the given URL.
 
 - `url`: The URL of the video to stream.
 - `options` (optional): Additional options for streaming, such as video format and a progress callback.
+  - `format`: String | [Format Options](#format-for-stream).
+  - `onProgress`: An callback function to track progess of downloading.
 
 #### Returns:
 
@@ -300,6 +308,82 @@ Downloads `ffmpeg` using a predefined method.
 ```typescript
 await ytDlp.downloadFFmpeg();
 ```
+
+# Format Options
+
+### `format` for Download
+
+`filter:` "videoonly" | "audioonly" | "audioandvideo" | "mergevideo"
+
+- `filter: "videoonly"`
+
+  - `quality:` "2160p" |
+    "1440p" |
+    "1080p" |
+    "720p" |
+    "480p" |
+    "360p" |
+    "240p" |
+    "144p" |
+    "highest" |
+    "lowest" (default: 'highest')
+  - `type:` "mp4" | "webm" (default:'mp4')
+
+- `filter: "audioonly"`
+
+  - `quality:` "highest" | "lowest" (default:'highest')
+
+- `filter: "audioandvideo"`
+
+  - `quality:` "highest" | "lowest" (default:'highest')
+  - `type:` "mp4" | "webm" (default:'mp4')
+
+- `filter: "audioonly"`
+
+  - `quality:` 0 to 10 (default:5)
+  - `type:` "aac" | "flac" | "mp3" | "m4a" | "opus" | "vorbis" | "wav" | "alac" (default:'mp3')
+
+- `filter: "mergevideo"`
+  - `quality:` "2160p" |
+    "1440p" |
+    "1080p" |
+    "720p" |
+    "480p" |
+    "360p" |
+    "240p" |
+    "144p" |
+    "highest" |
+    "lowest" (default: 'highest')
+  - `format:` "mkv" | "mp4" | "ogg" | "webm" | "flv" (default:'mp4')
+
+### `format` for Stream
+
+`filter:` "videoonly" | "audioonly" | "audioandvideo"
+
+- `filter: "videoonly"`
+
+  - `quality:` "2160p" |
+    "1440p" |
+    "1080p" |
+    "720p" |
+    "480p" |
+    "360p" |
+    "240p" |
+    "144p" |
+    "highest" |
+    "lowest" (default: 'highest')
+
+- `filter: "audioonly"`
+
+  - `quality:` "highest" | "lowest" (default:'highest')
+
+- `filter: "audioandvideo"`
+
+  - `quality:` "highest" | "lowest" (default:'highest')
+
+- `filter: "extractaudio"`
+  - `quality:` 0 to 10 (default:5)
+  - `type:` "aac" | "flac" | "mp3" | "m4a" | "opus" | "vorbis" | "wav" | "alac" (default:'mp3')
 
 ## Contributing
 
