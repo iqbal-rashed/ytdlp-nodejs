@@ -9,7 +9,7 @@ This Node.js module is a wrapper for `yt-dlp`, a powerful video downloader, that
 To install the `yt-dlp` Node.js wrapper, run:
 
 ```bash
-npm i ytdlp-nodejs@2.0.2-beta
+npm i ytdlp-nodejs@2.0.3-beta
 ```
 
 This package will automatically download the `yt-dlp` binary for you, eliminating the need for manual installation.

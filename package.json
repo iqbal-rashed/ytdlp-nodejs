@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsup ./src/scripts/download.ts",
     "test": "jest",
     "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
