@@ -1,4 +1,4 @@
-> Important Note: Version 2 is finally here! 🎉 This is still in beta, so please feel free to submit feature requests.
+> Important Note: Version 2 is finally here! 🎉 This is still in beta, so please feel free to submit feature requests. Found any bug? Please open an issue on our GitHub repository.
 
 # ytdlp-nodejs
 
@@ -9,10 +9,10 @@ This Node.js module is a wrapper for `yt-dlp`, a powerful video downloader, that
 To install the `yt-dlp` Node.js wrapper, run:
 
 ```bash
-npm i ytdlp-nodejs@2.0.3-beta
+npm i ytdlp-nodejs
 ```
 
-This package will automatically download the `yt-dlp` binary for you, eliminating the need for manual installation.
+This package recommends installing FFmpeg. You can manually download it from [here](https://github.com/yt-dlp/FFmpeg-Builds#ffmpeg-static-auto-builds), or you can use the [downloadFFmpeg()](#downloadffmpeg-promisevoid) function to automate the process.
 
 ## Usage
 
