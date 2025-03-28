@@ -1,12 +1,69 @@
-import ytdlp from "./src/index";
+import { createWriteStream } from 'fs';
+import { YtDlp } from './src/index';
 
-const yt = ytdlp.download(
-    "https://www.youtube.com/watch?v=xEALTVLxrDw&list=RD6DtPF9W3ejI&index=4",
-    {
-        filter: "audioandvideo",
-    }
-);
+const ytdlp = new YtDlp();
 
-yt.on("progress", (progress) => {
-    console.log(progress);
+async function downloadVideo() {
+  try {
+    const output = await ytdlp.downloadAsync(
+      'https://www.youtube.com/watch?v=_AL4IwHuHlY',
+      {
+        onProgress: (progress) => {
+          console.log(progress);
+        },
+      }
+    );
+    console.log(output);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+async function streamVideo() {
+  try {
+    const st = createWriteStream('video.mp4');
+
+    const ytdlpStream = ytdlp.stream(
+      'https://www.youtube.com/watch?v=_AL4IwHuHlY',
+      {
+        onProgress: (progress) => {
+          console.log(progress);
+        },
+      }
+    );
+
+    await ytdlpStream.pipeAsync(st);
+
+    console.log('Downloaded');
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+async function execVideo() {
+  const s = ytdlp.download('https://www.youtube.com/watch?v=_AL4IwHuHlY');
+
+  s.on('progress', (d) => {
+    console.log(d);
+  });
+}
+
+async function isInstallation() {
+  try {
+    const isInstalled = await ytdlp.checkInstallationAsync({ ffmpeg: true });
+    console.log(isInstalled);
+  } catch (error) {
+    console.log('test', error.message);
+  }
+}
+
+ytdlp.downloadFFmpeg().then(async () => {
+  try {
+    await isInstallation();
+    await downloadVideo();
+    await streamVideo();
+    await execVideo();
+  } catch (error) {
+    console.log(error);
+  }
 });

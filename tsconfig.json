@@ -1,24 +1,14 @@
 {
-    "compilerOptions": {
-        "strict": true,
-        "declarationDir": "./lib/types",
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "skipLibCheck": true,
-        "checkJs": true,
-        "allowJs": true,
-        "rootDir": "./src",
-        "declaration": true,
-        "declarationMap": true,
-        "allowSyntheticDefaultImports": true,
-        "resolveJsonModule": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "lib": ["ES6", "DOM"],
-        "target": "ES6",
-        "module": "CommonJS",
-        "moduleResolution": "Node",
-        "outDir": "./lib"
-    },
-    "files": ["./src/index.ts"]
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "declaration": true,
+    "outDir": "./dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
