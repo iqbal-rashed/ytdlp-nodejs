@@ -329,6 +329,45 @@ Downloads `ffmpeg` using a predefined method.
 await ytDlp.downloadFFmpeg();
 ```
 
+### `getFileAsync<F extends DownloadKeyWord>(url, options?): Promise<File>`
+
+Returns a `File` object containing the video/audio data without saving it to disk.
+
+#### Parameters:
+
+- `url`: The URL of the video.
+- `options` (optional): Additional options for getting the file:
+  - `format`: String | [Format Options](#format-for-download)
+  - `filename`: Custom filename for the resulting file
+  - `metadata`: Custom metadata for the file:
+    - `name`: File name
+    - `type`: MIME type
+    - `size`: File size in bytes
+  - `onProgress`: A callback function to track progress of downloading
+
+#### Returns:
+
+- `Promise<File>`: Resolves to a `File` object containing the video/audio data.
+
+#### Example:
+
+```typescript
+const file = await ytdlp.getFileAsync(
+  'https://www.youtube.com/watch?v=exampleVideoID',
+  {
+    format: {
+      filter: 'audioandvideo',
+      type: 'mp4',
+      quality: 'highest',
+    },
+    filename: 'custom-video.mp4',
+    onProgress: (progress) => {
+      console.log(progress);
+    },
+  }
+);
+```
+
 # Format Options
 
 ### `format` for Download

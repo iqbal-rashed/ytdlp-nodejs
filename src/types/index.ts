@@ -472,3 +472,15 @@ export type PipeResponse = {
     }
   ) => Promise<NodeJS.WritableStream>;
 };
+
+export interface FileMetadata {
+  name: string;
+  type: string;
+  size?: number;
+}
+
+export interface GetFileOptions<F extends DownloadKeyWord>
+  extends DownloadOptions<F> {
+  filename?: string;
+  metadata?: FileMetadata;
+}
