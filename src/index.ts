@@ -20,6 +20,7 @@ import { parseDownloadOptions, parseStreamOptions } from './utils/format';
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
+import { BIN_DIR } from './utils/utils';
 
 export class YtDlp {
   private readonly binaryPath: string;
@@ -48,9 +49,7 @@ export class YtDlp {
   // done
   private getDefaultBinaryPath(): string {
     return path.join(
-      __dirname,
-      '..',
-      'bin',
+      BIN_DIR,
       os.platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
     );
   }
@@ -301,6 +300,13 @@ export class YtDlp {
     const args = ['--list-thumbnails', '--quiet', url];
     const execResult = await this._executeAsync(args);
     return extractThumbnails(execResult);
+  }
+
+  // done
+  public async getTitleAsync(url: string): Promise<string> {
+    const args = ['--print', 'title', url];
+    const execResult = await this._executeAsync(args);
+    return execResult;
   }
 
   public async downloadFFmpeg() {

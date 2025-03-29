@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { downloadFile } from '../utils/request';
+import { BIN_DIR } from '../utils/utils';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/yt-dlp/yt-dlp/releases/latest/download';
@@ -38,16 +39,15 @@ async function downloadYtDlp(): Promise<string> {
   const fileName = getYtdlpFilename();
   const downloadUrl: string = `${DOWNLOAD_BASE_URL}/${fileName}`;
 
-  const binDir = path.join(__dirname, '..', '..', 'bin');
-  const outputPath = path.join(binDir, fileName);
+  const outputPath = path.join(BIN_DIR, fileName);
 
   const isExists = fs.existsSync(outputPath);
   if (isExists) return outputPath;
 
   console.log(`Downloading yt-dlp...`, downloadUrl);
 
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
+  if (!fs.existsSync(BIN_DIR)) {
+    fs.mkdirSync(BIN_DIR, { recursive: true });
   }
 
   try {

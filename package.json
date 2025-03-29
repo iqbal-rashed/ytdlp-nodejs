@@ -1,6 +1,6 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -36,13 +36,13 @@
     "typescript",
     "nodejs",
     "youtube video",
-    "video"
+    "video",
+    "video downloader"
   ],
   "author": "Rashed Iqbal",
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.23.0",
-    "@types/adm-zip": "^0.5.7",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",
     "eslint": "^9.23.0",
@@ -60,9 +60,5 @@
   ],
   "engines": {
     "node": ">=16.0.0"
-  },
-  "dependencies": {
-    "adm-zip": "^0.5.16",
-    "tar": "^7.4.3"
   }
 }

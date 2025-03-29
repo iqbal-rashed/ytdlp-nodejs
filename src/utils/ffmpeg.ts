@@ -1,9 +1,9 @@
 import path from 'path';
 import fs from 'fs';
-
 import { downloadFile } from './request';
-import AdmZip from 'adm-zip';
-import * as tar from 'tar';
+import { BIN_DIR } from './utils';
+import { download7zip } from './7zip';
+import { execSync } from 'child_process';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest';
@@ -23,8 +23,6 @@ const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
     arm64: 'ffmpeg-master-latest-macosarm64-gpl.zip',
   },
 };
-
-const BIN_DIR = path.join(__dirname, '..', '..', 'bin');
 
 function getFFmpegFileName(): string {
   const platform = process.platform as string;
@@ -67,12 +65,7 @@ export async function downloadFFmpeg() {
       console.log('Error while chmod');
     }
 
-    if (fileName.endsWith('.zip')) {
-      await unzipFile(outputPath, BIN_DIR);
-    }
-    if (fileName.endsWith('.tar.xz')) {
-      await untarFile(outputPath, BIN_DIR);
-    }
+    await extractFile(outputPath, BIN_DIR);
 
     fs.unlinkSync(outputPath);
 
@@ -90,7 +83,7 @@ export function findFFmpegBinary() {
 
     const ffmpegFileName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
 
-    const folderName = path.basename(fileName, path.extname(fileName));
+    const folderName = getFolderName(fileName);
 
     const ffmpegPath = path.join(BIN_DIR, folderName, 'bin', ffmpegFileName);
     if (fs.existsSync(ffmpegPath)) {
@@ -103,14 +96,33 @@ export function findFFmpegBinary() {
   }
 }
 
-function unzipFile(zipPath: string, targetPath: string) {
-  const zip = new AdmZip(zipPath);
-  return zip.extractAllToAsync(targetPath, true);
+export async function extractFile(filePath: string, targetPath: string) {
+  try {
+    const path7zip = await download7zip();
+    const isTar = filePath.includes('tar.xz');
+
+    if (isTar) {
+      execSync(`"${path7zip}" x "${filePath}" -aoa -o"${targetPath}"`);
+
+      execSync(
+        `"${path7zip}" x "${path.join(
+          targetPath,
+          path.basename(filePath, path.extname(filePath))
+        )}" -aoa -o"${targetPath}"`
+      );
+    } else {
+      execSync(`"${path7zip}" x "${filePath}" -aoa -o"${targetPath}"`);
+    }
+  } catch (error) {
+    console.error('Error extracting file:', error);
+    throw error;
+  }
 }
 
-function untarFile(tarPath: string, targetPath: string) {
-  return tar.x({
-    file: tarPath,
-    C: targetPath,
-  });
+function getFolderName(fn: string) {
+  let fx = path.basename(fn, path.extname(fn));
+  if (path.extname(fx)) {
+    fx = getFolderName(fx);
+  }
+  return fx;
 }
