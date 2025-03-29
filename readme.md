@@ -2,7 +2,7 @@
 
 # ytdlp-nodejs
 
-This Node.js module is a wrapper for `yt-dlp`, a powerful video downloader, that allows you to download, stream, and fetch metadata for videos from various websites. The wrapper automatically downloads the `yt-dlp` binary and provides a simple interface for using its features directly within a Node.js environment.
+This Node.js module is a wrapper for [`yt-dlp`](https://github.com/yt-dlp/yt-dlp), a powerful video downloader, that allows you to download, stream, and fetch metadata for videos from various websites. The wrapper automatically downloads the `yt-dlp` binary and provides a simple interface for using its features directly within a Node.js environment.
 
 ## Installation
 
@@ -29,7 +29,7 @@ const ytdlp = new YtDlp();
 ```javascript
 async function downloadVideo() {
   try {
-    const output = await ytdlp.download(
+    const output = await ytdlp.downloadAsync(
       'https://www.youtube.com/watch?v=_AL4IwHuHlY',
       {
         onProgress: (progress) => {
@@ -291,6 +291,26 @@ Fetches all available thumbnails for a video asynchronously.
 
 ```typescript
 const thumbnails = await ytDlp.getThumbnailsAsync(
+  'https://www.youtube.com/watch?v=exampleVideoID'
+);
+```
+
+### `getTitleAsync(url): Promise<string>`
+
+Fetche title for a video asynchronously.
+
+#### Parameters:
+
+- `url`: The URL of the video.
+
+#### Returns:
+
+- `Promise<string>`: Resolves to a string.
+
+#### Example:
+
+```typescript
+const title = await ytDlp.getTitleAsync(
   'https://www.youtube.com/watch?v=exampleVideoID'
 );
 ```
