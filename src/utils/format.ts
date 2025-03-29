@@ -109,3 +109,79 @@ export function parseStreamOptions<T extends StreamKeyWord>(
 
   return formatArr;
 }
+
+export function getContentType(
+  format?: DownloadOptions<DownloadKeyWord>['format']
+): string {
+  if (!format || typeof format === 'string') {
+    return 'video/mp4';
+  }
+
+  const { filter, type } = format as {
+    filter: DownloadKeyWord;
+    type?: string;
+  };
+
+  switch (filter) {
+    case 'videoonly':
+    case 'audioandvideo':
+      switch (type) {
+        case 'mp4':
+          return 'video/mp4';
+        case 'webm':
+          return 'video/webm';
+        default:
+          return 'video/mp4';
+      }
+    case 'audioonly':
+      switch (type) {
+        case 'aac':
+          return 'audio/aac';
+        case 'flac':
+          return 'audio/flac';
+        case 'mp3':
+          return 'audio/mpeg';
+        case 'm4a':
+          return 'audio/mp4';
+        case 'opus':
+          return 'audio/opus';
+        case 'vorbis':
+          return 'audio/vorbis';
+        case 'wav':
+          return 'audio/wav';
+        case 'alac':
+          return 'audio/mp4';
+        default:
+          return 'audio/mpeg';
+      }
+    case 'mergevideo':
+      switch (type) {
+        case 'webm':
+          return 'video/webm';
+        case 'mkv':
+          return 'video/x-matroska';
+        case 'ogg':
+          return 'video/ogg';
+        case 'flv':
+          return 'video/x-flv';
+        default:
+          return 'video/mp4';
+      }
+  }
+}
+
+export function getFileExtension(
+  format?: DownloadOptions<DownloadKeyWord>['format']
+): string {
+  if (!format || typeof format === 'string') {
+    return 'mp4';
+  }
+
+  const { filter, type } = format as { filter: DownloadKeyWord; type?: string };
+
+  if (type) {
+    return type;
+  }
+
+  return filter === 'audioonly' ? 'mp3' : 'mp4';
+}

@@ -315,21 +315,7 @@ const title = await ytDlp.getTitleAsync(
 );
 ```
 
-### `downloadFFmpeg(): Promise<void>`
-
-Downloads `ffmpeg` using a predefined method.
-
-#### Returns:
-
-- `Promise<void>`: Resolves once the download is complete.
-
-#### Example:
-
-```typescript
-await ytDlp.downloadFFmpeg();
-```
-
-### `getFileAsync<F extends DownloadKeyWord>(url, options?): Promise<File>`
+### `getFileAsync(url, options?): Promise<File>`
 
 Returns a `File` object containing the video/audio data without saving it to disk.
 
@@ -366,6 +352,20 @@ const file = await ytdlp.getFileAsync(
     },
   }
 );
+```
+
+### `downloadFFmpeg(): Promise<void>`
+
+Downloads `ffmpeg` using a predefined method.
+
+#### Returns:
+
+- `Promise<void>`: Resolves once the download is complete.
+
+#### Example:
+
+```typescript
+await ytDlp.downloadFFmpeg();
 ```
 
 # Format Options

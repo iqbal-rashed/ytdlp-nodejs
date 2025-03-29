@@ -19,7 +19,12 @@ import {
 } from './types';
 import { createArgs } from './utils/args';
 import { extractThumbnails } from './utils/thumbnails';
-import { parseDownloadOptions, parseStreamOptions } from './utils/format';
+import {
+  getContentType,
+  getFileExtension,
+  parseDownloadOptions,
+  parseStreamOptions,
+} from './utils/format';
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
@@ -350,101 +355,17 @@ export class YtDlp {
       passThrough
     );
 
-    const blob = new Blob(chunks, { type: this.getContentType(format) });
+    const blob = new Blob(chunks, { type: getContentType(format) });
 
     const defaultMetadata: FileMetadata = {
-      name: filename || `${info.title}.${this.getFileExtension(format)}`,
-      type: this.getContentType(format),
+      name: filename || `${info.title}.${getFileExtension(format)}`,
+      type: getContentType(format),
       size: blob.size,
       ...metadata,
     };
     return new File([Buffer.concat(chunks)], defaultMetadata.name, {
       type: defaultMetadata.type,
     });
-  }
-
-  private getContentType(
-    format?: DownloadOptions<DownloadKeyWord>['format']
-  ): string {
-    if (!format || typeof format === 'string') {
-      return 'video/mp4';
-    }
-
-    const { filter, type } = format as {
-      filter: DownloadKeyWord;
-      type?: string;
-    };
-
-    switch (filter) {
-      case 'videoonly':
-      case 'audioandvideo':
-        switch (type) {
-          case 'mp4':
-            return 'video/mp4';
-          case 'webm':
-            return 'video/webm';
-          default:
-            return 'video/mp4';
-        }
-      case 'audioonly':
-        switch (type) {
-          case 'aac':
-            return 'audio/aac';
-          case 'flac':
-            return 'audio/flac';
-          case 'mp3':
-            return 'audio/mpeg';
-          case 'm4a':
-            return 'audio/mp4';
-          case 'opus':
-            return 'audio/opus';
-          case 'vorbis':
-            return 'audio/vorbis';
-          case 'wav':
-            return 'audio/wav';
-          case 'alac':
-            return 'audio/mp4';
-          default:
-            return 'audio/mpeg';
-        }
-      case 'mergevideo':
-        switch (type) {
-          case 'webm':
-            return 'video/webm';
-          case 'mkv':
-            return 'video/x-matroska';
-          case 'ogg':
-            return 'video/ogg';
-          case 'flv':
-            return 'video/x-flv';
-          default:
-            return 'video/mp4';
-        }
-    }
-  }
-
-  private getFileExtension(
-    format?: DownloadOptions<DownloadKeyWord>['format']
-  ): string {
-    if (!format || typeof format === 'string') {
-      return 'mp4';
-    }
-
-    const { filter, type } = format as {
-      filter: DownloadKeyWord;
-      type?: string;
-    };
-
-    if (type) {
-      return type;
-    }
-
-    switch (filter) {
-      case 'audioonly':
-        return 'mp3';
-      default:
-        return 'mp4';
-    }
   }
 }
 
