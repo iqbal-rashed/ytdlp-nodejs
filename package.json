@@ -1,6 +1,6 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -14,11 +14,11 @@
     }
   },
   "scripts": {
-    "build": "tsup && tsup ./src/scripts/download.ts -d ./dist/scripts --no-config --minify",
+    "build": "tsup && tsup ./src/scripts/download.ts -d ./dist --no-config --minify",
     "test": "jest",
     "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
-    "download": "node ./dist/scripts/download.js",
+    "download": "node ./dist/download.js",
     "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run download', { stdio: 'inherit' });\"",
     "prepare": "husky"
   },
@@ -41,6 +41,13 @@
   ],
   "author": "Rashed Iqbal",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iqbal-rashed/ytdlp-nodejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/iqbal-rashed/ytdlp-nodejs/issues"
+  },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
     "@types/jest": "^29.5.14",

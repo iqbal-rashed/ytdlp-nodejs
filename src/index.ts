@@ -28,7 +28,8 @@ import {
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
-import { BIN_DIR } from './utils/utils';
+
+export const BIN_DIR = path.join(__dirname, '..', 'bin');
 
 export class YtDlp {
   private readonly binaryPath: string;

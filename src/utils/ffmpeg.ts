@@ -1,9 +1,9 @@
 import path from 'path';
 import fs from 'fs';
 import { downloadFile } from './request';
-import { BIN_DIR } from './utils';
 import { download7zip } from './7zip';
 import { execSync } from 'child_process';
+import { BIN_DIR } from '..';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest';

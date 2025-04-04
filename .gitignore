@@ -3,3 +3,4 @@ bin
 dist
 output
 .tsup
+src/bin

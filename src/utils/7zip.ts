@@ -1,7 +1,8 @@
 import path from 'path';
-import { BIN_DIR } from './utils';
+
 import fs from 'fs';
 import { downloadFile } from './request';
+import { BIN_DIR } from '..';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/develar/7zip-bin/raw/refs/heads/update-7zip';

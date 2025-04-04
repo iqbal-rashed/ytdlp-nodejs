@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { downloadFile } from '../utils/request';
-import { BIN_DIR } from '../utils/utils';
+import { BIN_DIR } from '..';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/yt-dlp/yt-dlp/releases/latest/download';
