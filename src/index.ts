@@ -10,6 +10,7 @@ import {
   FileMetadata,
   GetFileOptions,
   PipeResponse,
+  PlaylistInfo,
   StreamKeyWord,
   StreamOptions,
   VideoInfo,
@@ -298,15 +299,22 @@ export class YtDlp {
   }
 
   // done
-  public async getInfoAsync(url: string): Promise<VideoInfo> {
-    const args = ['--dump-json', '--quiet', url];
+  public async getInfoAsync(url: string): Promise<VideoInfo | PlaylistInfo> {
+    const args = ['--dump-single-json', '--quiet', url];
     const execResult = await this._executeAsync(args);
-    return JSON.parse(execResult) as VideoInfo;
+    return JSON.parse(execResult);
   }
 
   // done
   public async getThumbnailsAsync(url: string): Promise<VideoThumbnail[]> {
-    const args = ['--list-thumbnails', '--quiet', url];
+    const args = [
+      '--print',
+      'thumbnails_table',
+      '--print',
+      'playlist:thumbnails_table',
+      '--quiet',
+      url,
+    ];
     const execResult = await this._executeAsync(args);
     return extractThumbnails(execResult);
   }
@@ -378,4 +386,5 @@ export type {
   VideoProgress,
   VideoThumbnail,
   YtDlpOptions,
+  PlaylistInfo,
 };

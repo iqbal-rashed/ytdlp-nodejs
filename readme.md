@@ -255,7 +255,7 @@ const ytdlpStream = ytDlp.stream(
 ytdlpStream.pipe(destinationStream);
 ```
 
-### `getInfoAsync(url): Promise<VideoInfo>`
+### `getInfoAsync(url): Promise<VideoInfo | PlaylistInfo>`
 
 Fetches detailed information about a video asynchronously.
 
@@ -265,14 +265,18 @@ Fetches detailed information about a video asynchronously.
 
 #### Returns:
 
-- `Promise<VideoInfo>`: Resolves to a `VideoInfo` object containing metadata about the video.
+- `Promise<VideoInfo | PlaylistInfo>`: Resolves to a `VideoInfo` or `PlaylistInfo` object containing metadata about the video.
 
 #### Example:
 
 ```typescript
-const info = await ytDlp.getInfoAsync(
-  'https://www.youtube.com/watch?v=exampleVideoID'
-);
+const info = await ytDlp.getInfoAsync('url');
+if (info._type == 'video') {
+  console.log(info); // VideoInfo
+}
+if (info._type == 'playlist') {
+  console.log(info); // PlaylistInfo
+}
 ```
 
 ### `getThumbnailsAsync(url): Promise<VideoThumbnail[]>`

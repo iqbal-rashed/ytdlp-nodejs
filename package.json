@@ -1,6 +1,6 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -43,7 +43,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/iqbal-rashed/ytdlp-nodejs.git"
+    "url": "git+https://github.com/iqbal-rashed/ytdlp-nodejs.git"
   },
   "bugs": {
     "url": "https://github.com/iqbal-rashed/ytdlp-nodejs/issues"
