@@ -65,11 +65,14 @@ export function parseDownloadOptions<T extends DownloadKeyWord>(
   }
 
   if (filter === 'mergevideo') {
-    const videoQuality = quality
-      ? ByQuality[quality as keyof typeof ByQuality]
-      : 'bv*';
-    const videoExt = type ? `[ext=${type}]` : '';
-    formatArr = ['-f', `${videoQuality}+ba${videoExt}`];
+    formatArr = [
+      '-f',
+      (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') +
+        '+ba' +
+        '[ext=' +
+        (type ? type : 'mp4') +
+        ']',
+    ];
   }
 
   return formatArr;
