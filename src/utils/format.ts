@@ -50,23 +50,23 @@ export function parseDownloadOptions<T extends DownloadKeyWord>(
     formatArr = [
       '-f',
       (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') +
-        '[acodec=none]',
+      '[acodec=none]',
     ];
   }
   if (filter === 'audioandvideo') {
     formatArr = [
       '-f',
       (quality == 'lowest' ? 'w*' : 'b*') +
-        '[vcodec!=none][acodec!=none][ext=' +
-        (type ? type : 'mp4') +
-        ']',
+      '[vcodec!=none][acodec!=none][ext=' +
+      (type ? type : 'mp4') +
+      ']',
     ];
   }
 
   if (filter === 'mergevideo') {
     formatArr = [
       '-f',
-      (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') + '+ba',
+      (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') + '+ba' + '[ext=' + (type ? type : 'mp4') + ']',
     ];
   }
 
