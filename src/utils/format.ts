@@ -53,6 +53,7 @@ export function parseDownloadOptions<T extends DownloadKeyWord>(
         '[acodec=none]',
     ];
   }
+
   if (filter === 'audioandvideo') {
     formatArr = [
       '-f',
@@ -64,10 +65,11 @@ export function parseDownloadOptions<T extends DownloadKeyWord>(
   }
 
   if (filter === 'mergevideo') {
-    formatArr = [
-      '-f',
-      (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') + '+ba',
-    ];
+    const videoQuality = quality
+      ? ByQuality[quality as keyof typeof ByQuality]
+      : 'bv*';
+    const videoExt = type ? `[ext=${type}]` : '';
+    formatArr = ['-f', `${videoQuality}+ba${videoExt}`];
   }
 
   return formatArr;

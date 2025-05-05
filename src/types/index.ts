@@ -357,11 +357,90 @@ export interface VideoInfo {
   channel_url: string;
   duration: number;
   view_count: number;
-  average_rating: number;
+
   categories: string[];
   tags: string[];
+  subtitles: Subtitles;
+  automatic_captions: Subtitles;
   _type: 'video';
+
+  average_rating: number;
+  age_limit: number;
+  webpage_url: string;
+  playable_in_embed: boolean;
+  live_status: string;
+  media_type: object;
+  release_timestamp: object;
+  _format_sort_fields: object;
+  comment_count: number;
+  chapters: { start_time: number; title: string; end_time: number }[];
+  heatmap: object;
+  like_count: number;
+  channel: string;
+  channel_follower_count: number;
+  channel_is_verified: boolean;
+  timestamp: number;
+  availability: string;
+  original_url: string;
+  webpage_url_basename: string;
+  webpage_url_domain: string;
+  extractor: string;
+  extractor_key: string;
+  playlist: object;
+  playlist_index: object;
+  display_id: string;
+  fulltitle: string;
+  duration_string: string;
+  release_year: object;
+  is_live: boolean;
+  was_live: boolean;
+  requested_subtitles: object;
+  _has_drm: object;
+  epoch: number;
+  requested_downloads: object[];
+  asr: number;
+  filesize: number;
+  format_id: string;
+  format_note: string;
+  source_preference: number;
+  fps: number;
+  audio_channels: number;
+  height: number;
+  quality: number;
+  has_drm: boolean;
+  tbr: number;
+  filesize_approx: number;
+  url: string;
+  width: number;
+  language: string;
+  language_preference: number;
+  preference: object;
+  ext: string;
+  vcodec: string;
+  acodec: string;
+  dynamic_range: string;
+  downloader_options: {
+    [v: string]: string | number;
+  };
+  protocol: string;
+  video_ext: string;
+  audio_ext: string;
+  vbr: object;
+  abr: object;
+  resolution: string;
+  aspect_ratio: number;
+  http_headers: {
+    [v: string]: string;
+  };
+  format: string;
+  _version: object;
 }
+
+interface Subtitles {
+  [k: string]: { ext: string; url: string; name: string }[];
+}
+
+export type InfoType = 'video' | 'playlist';
 
 export interface PlaylistInfo {
   id: string;
@@ -426,14 +505,14 @@ type VideoQuality =
   | 'highest'
   | 'lowest';
 
-type DownloadQualityOptions = {
+type QualityOptions = {
   videoonly: VideoQuality;
   audioonly: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   audioandvideo: 'highest' | 'lowest';
   mergevideo: VideoQuality;
 };
 
-type DownloadTypeOptions = {
+type TypeOptions = {
   videoonly: 'mp4' | 'webm';
   audioandvideo: 'mp4' | 'webm';
   mergevideo: 'mkv' | 'mp4' | 'ogg' | 'webm' | 'flv';
@@ -448,30 +527,17 @@ type DownloadTypeOptions = {
     | 'alac';
 };
 
-export type DownloadKeyWord = keyof DownloadQualityOptions;
-export type StreamKeyWord = keyof StreamQualityOptions;
+export type FormatKeyWord = keyof QualityOptions;
 
-type StreamQualityOptions = {
-  videoonly: VideoQuality;
-  audioonly: 'highest' | 'lowest';
-  audioandvideo: 'highest' | 'lowest';
-};
-
-export interface DownloadOptions<F extends DownloadKeyWord>
+export interface FormatOptions<F extends FormatKeyWord>
   extends Omit<ArgsOptions, 'format' | 'progressTemplate'> {
   format?:
     | {
         filter: F;
-        quality?: DownloadQualityOptions[F];
-        type?: DownloadTypeOptions[F];
+        quality?: QualityOptions[F];
+        type?: TypeOptions[F];
       }
     | string;
-  onProgress?: (p: VideoProgress) => void;
-}
-
-export interface StreamOptions<F extends StreamKeyWord>
-  extends Omit<ArgsOptions, 'format' | 'progressTemplate' | 'output'> {
-  format?: { filter: F; quality?: StreamQualityOptions[F] } | string;
   onProgress?: (p: VideoProgress) => void;
 }
 
@@ -496,8 +562,8 @@ export interface FileMetadata {
   size?: number;
 }
 
-export interface GetFileOptions<F extends DownloadKeyWord>
-  extends DownloadOptions<F> {
+export interface GetFileOptions<F extends FormatKeyWord>
+  extends FormatOptions<F> {
   filename?: string;
   metadata?: FileMetadata;
 }

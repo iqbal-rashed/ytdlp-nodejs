@@ -5,14 +5,13 @@ import * as os from 'os';
 import { Blob } from 'buffer';
 import {
   ArgsOptions,
-  DownloadKeyWord,
-  DownloadOptions,
   FileMetadata,
   GetFileOptions,
+  InfoType,
   PipeResponse,
   PlaylistInfo,
-  StreamKeyWord,
-  StreamOptions,
+  FormatKeyWord,
+  FormatOptions,
   VideoInfo,
   VideoProgress,
   VideoThumbnail,
@@ -206,7 +205,7 @@ export class YtDlp {
   private buildArgs(
     url: string,
     opt: ArgsOptions,
-    onProgress?: ((p: VideoProgress) => void) | boolean,
+    isProgress?: boolean,
     extra?: string[]
   ): string[] {
     const args = createArgs(opt);
@@ -214,7 +213,7 @@ export class YtDlp {
       args.push('--ffmpeg-location', this.ffmpegPath);
     }
 
-    if (onProgress) {
+    if (isProgress) {
       args.push('--progress-template', PROGRESS_STRING);
     }
 
@@ -226,9 +225,9 @@ export class YtDlp {
   }
 
   // done
-  public download<F extends DownloadKeyWord>(
+  public download<F extends FormatKeyWord>(
     url: string,
-    options?: Omit<DownloadOptions<F>, 'onProgress'>
+    options?: Omit<FormatOptions<F>, 'onProgress'>
   ) {
     const { format, ...opt } = options || {};
     const args = this.buildArgs(url, opt, true, parseDownloadOptions(format));
@@ -237,15 +236,15 @@ export class YtDlp {
   }
 
   // done
-  public async downloadAsync<F extends DownloadKeyWord>(
+  public async downloadAsync<F extends FormatKeyWord>(
     url: string,
-    options?: DownloadOptions<F>
+    options?: FormatOptions<F>
   ): Promise<string> {
     const { format, onProgress, ...opt } = options || {};
     const args = this.buildArgs(
       url,
       opt,
-      onProgress,
+      !!onProgress,
       parseDownloadOptions(format)
     );
 
@@ -258,12 +257,12 @@ export class YtDlp {
   }
 
   // done
-  public stream<F extends StreamKeyWord>(
+  public stream<F extends FormatKeyWord>(
     url: string,
-    options?: StreamOptions<F>
+    options?: FormatOptions<F>
   ): PipeResponse {
     const { format, onProgress, ...opt } = options || {};
-    const args = this.buildArgs(url, opt, onProgress, [
+    const args = this.buildArgs(url, opt, !!onProgress, [
       ...parseStreamOptions(format),
       '-o',
       '-',
@@ -299,7 +298,9 @@ export class YtDlp {
   }
 
   // done
-  public async getInfoAsync(url: string): Promise<VideoInfo | PlaylistInfo> {
+  public async getInfoAsync<T extends InfoType>(
+    url: string
+  ): Promise<T extends 'video' ? VideoInfo : PlaylistInfo> {
     const args = ['--dump-single-json', '--quiet', url];
     const execResult = await this._executeAsync(args);
     return JSON.parse(execResult);
@@ -330,7 +331,7 @@ export class YtDlp {
     return downloadFFmpeg();
   }
 
-  public async getFileAsync<F extends DownloadKeyWord>(
+  public async getFileAsync<F extends FormatKeyWord>(
     url: string,
     options?: GetFileOptions<F> & {
       onProgress?: (p: VideoProgress) => void;
@@ -380,8 +381,7 @@ export class YtDlp {
 
 export type {
   ArgsOptions,
-  DownloadOptions,
-  StreamOptions,
+  FormatOptions,
   VideoInfo,
   VideoProgress,
   VideoThumbnail,

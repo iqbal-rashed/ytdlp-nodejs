@@ -374,8 +374,6 @@ await ytDlp.downloadFFmpeg();
 
 # Format Options
 
-### `format` for Download
-
 `filter:` "videoonly" | "audioonly" | "audioandvideo" | "mergevideo"
 
 - `filter: "videoonly"`
@@ -418,35 +416,6 @@ await ytDlp.downloadFFmpeg();
     "highest" |
     "lowest" (default: 'highest')
   - `format:` "mkv" | "mp4" | "ogg" | "webm" | "flv" (default:'mp4')
-
-### `format` for Stream
-
-`filter:` "videoonly" | "audioonly" | "audioandvideo"
-
-- `filter: "videoonly"`
-
-  - `quality:` "2160p" |
-    "1440p" |
-    "1080p" |
-    "720p" |
-    "480p" |
-    "360p" |
-    "240p" |
-    "144p" |
-    "highest" |
-    "lowest" (default: 'highest')
-
-- `filter: "audioonly"`
-
-  - `quality:` "highest" | "lowest" (default:'highest')
-
-- `filter: "audioandvideo"`
-
-  - `quality:` "highest" | "lowest" (default:'highest')
-
-- `filter: "extractaudio"`
-  - `quality:` 0 to 10 (default:5)
-  - `type:` "aac" | "flac" | "mp3" | "m4a" | "opus" | "vorbis" | "wav" | "alac" (default:'mp3')
 
 ## Contributing
 
