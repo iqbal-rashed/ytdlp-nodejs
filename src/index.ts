@@ -22,8 +22,7 @@ import { extractThumbnails } from './utils/thumbnails';
 import {
   getContentType,
   getFileExtension,
-  parseDownloadOptions,
-  parseStreamOptions,
+  parseFormatOptions,
 } from './utils/format';
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
@@ -73,9 +72,6 @@ export class YtDlp {
       }
 
       const binaryProcess = spawn(this.binaryPath, ['--version']);
-      const ffmpegProcess = options?.ffmpeg
-        ? spawn(this.ffmpegPath!, ['--version'])
-        : null;
 
       let binaryExists = false;
       let ffmpegExists = !options?.ffmpeg;
@@ -83,16 +79,25 @@ export class YtDlp {
       binaryProcess.on('error', () => (binaryExists = false));
       binaryProcess.on('exit', (code) => {
         binaryExists = code === 0;
-        if (binaryExists && ffmpegExists) resolve(true);
+        if (options?.ffmpeg) {
+          const ffmpegProcess = spawn(this.ffmpegPath!, ['--version']);
+          ffmpegProcess.on('error', () => (ffmpegExists = false));
+          ffmpegProcess.on('exit', (code) => {
+            ffmpegExists = code === 0;
+            if (binaryExists && ffmpegExists) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          });
+        } else {
+          if (binaryExists) {
+            resolve(true);
+          } else {
+            resolve(false);
+          }
+        }
       });
-
-      if (ffmpegProcess) {
-        ffmpegProcess.on('error', () => (ffmpegExists = false));
-        ffmpegProcess.on('exit', (code) => {
-          ffmpegExists = code === 0;
-          if (binaryExists && ffmpegExists) resolve(true);
-        });
-      }
     });
   }
 
@@ -230,7 +235,7 @@ export class YtDlp {
     options?: Omit<FormatOptions<F>, 'onProgress'>
   ) {
     const { format, ...opt } = options || {};
-    const args = this.buildArgs(url, opt, true, parseDownloadOptions(format));
+    const args = this.buildArgs(url, opt, true, parseFormatOptions(format));
 
     return this._execute(args);
   }
@@ -245,7 +250,7 @@ export class YtDlp {
       url,
       opt,
       !!onProgress,
-      parseDownloadOptions(format)
+      parseFormatOptions(format)
     );
 
     return this._executeAsync(args, (data) => {
@@ -263,7 +268,7 @@ export class YtDlp {
   ): PipeResponse {
     const { format, onProgress, ...opt } = options || {};
     const args = this.buildArgs(url, opt, !!onProgress, [
-      ...parseStreamOptions(format),
+      ...parseFormatOptions(format),
       '-o',
       '-',
     ]);
@@ -347,7 +352,7 @@ export class YtDlp {
     passThrough.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
 
     const args = this.buildArgs(url, opt, !!onProgress, [
-      ...parseDownloadOptions(format),
+      ...parseFormatOptions(format),
       '-o',
       '-',
     ]);

@@ -28,6 +28,11 @@ async function downloadVideo() {
     const output = await ytdlp.downloadAsync(
       'https://www.youtube.com/watch?v=_AL4IwHuHlY',
       {
+        format: {
+          filter: 'mergevideo',
+          type: 'mp4',
+          quality: '720p',
+        },
         onProgress: (progress) => {
           console.log(progress);
         },
@@ -46,6 +51,11 @@ async function streamVideo() {
     const ytdlpStream = ytdlp.stream(
       'https://www.youtube.com/watch?v=_AL4IwHuHlY',
       {
+        format: {
+          filter: 'mergevideo',
+          type: 'mp4',
+          quality: '720p',
+        },
         onProgress: (progress) => {
           console.log(progress);
         },
@@ -71,7 +81,7 @@ async function execVideo() {
 async function isInstallation() {
   try {
     const isInstalled = await ytdlp.checkInstallationAsync({ ffmpeg: true });
-    console.log(isInstalled);
+    return isInstalled;
   } catch (error) {
     console.log('test', error.message);
   }
@@ -80,6 +90,7 @@ async function isInstallation() {
 ytdlp.downloadFFmpeg().then(async () => {
   try {
     await isInstallation();
+
     await downloadVideo();
     await streamVideo();
     await execVideo();

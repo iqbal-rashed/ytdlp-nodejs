@@ -1,9 +1,4 @@
-import {
-  DownloadKeyWord,
-  DownloadOptions,
-  StreamKeyWord,
-  StreamOptions,
-} from '../types';
+import { FormatKeyWord, FormatOptions } from '../types';
 
 const ByQuality = {
   '2160p': 'bv*[height<=2160]',
@@ -18,8 +13,8 @@ const ByQuality = {
   lowest: 'wv*',
 };
 
-export function parseDownloadOptions<T extends DownloadKeyWord>(
-  format?: DownloadOptions<T>['format'] | string
+export function parseFormatOptions<T extends FormatKeyWord>(
+  format?: FormatOptions<T>['format'] | string
 ) {
   if (!format) {
     return [];
@@ -65,65 +60,29 @@ export function parseDownloadOptions<T extends DownloadKeyWord>(
   }
 
   if (filter === 'mergevideo') {
-    formatArr = [
-      '-f',
-      (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') +
-        '+ba' +
-        '[ext=' +
-        (type ? type : 'mp4') +
-        ']',
-    ];
-  }
+    const videoQuality = quality
+      ? ByQuality[quality as keyof typeof ByQuality]
+      : 'bv*';
 
-  return formatArr;
-}
+    formatArr = ['-f', `${videoQuality}+ba`];
 
-export function parseStreamOptions<T extends StreamKeyWord>(
-  format?: StreamOptions<T>['format'] | string
-): string[] {
-  if (!format) {
-    return [];
-  }
-
-  if (typeof format === 'string') {
-    return ['-f', format];
-  }
-
-  if (Object.keys(format).length === 0) {
-    return ['-f', 'b*[vcode!=none][acodec!=none]'];
-  }
-
-  let formatArr: string[] = [];
-  const { filter, quality } = format;
-
-  if (filter === 'audioonly') {
-    formatArr = ['-f', quality == 'lowest' ? 'wa' : 'ba'];
-  }
-  if (filter === 'videoonly') {
-    formatArr = [
-      '-f',
-      (quality ? ByQuality[quality] : 'bv*') + '[acodec=none]',
-    ];
-  }
-  if (filter === 'audioandvideo') {
-    formatArr = [
-      '-f',
-      (quality == 'lowest' ? 'w*' : 'b*') + '[vcodec!=none][acodec!=none]',
-    ];
+    if (type) {
+      formatArr.push('--merge-output-format', type);
+    }
   }
 
   return formatArr;
 }
 
 export function getContentType(
-  format?: DownloadOptions<DownloadKeyWord>['format']
+  format?: FormatOptions<FormatKeyWord>['format']
 ): string {
   if (!format || typeof format === 'string') {
     return 'video/mp4';
   }
 
   const { filter, type } = format as {
-    filter: DownloadKeyWord;
+    filter: FormatKeyWord;
     type?: string;
   };
 
@@ -176,13 +135,13 @@ export function getContentType(
 }
 
 export function getFileExtension(
-  format?: DownloadOptions<DownloadKeyWord>['format']
+  format?: FormatOptions<FormatKeyWord>['format']
 ): string {
   if (!format || typeof format === 'string') {
     return 'mp4';
   }
 
-  const { filter, type } = format as { filter: DownloadKeyWord; type?: string };
+  const { filter, type } = format as { filter: FormatKeyWord; type?: string };
 
   if (type) {
     return type;
