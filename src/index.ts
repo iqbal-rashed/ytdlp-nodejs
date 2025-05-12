@@ -56,10 +56,16 @@ export class YtDlp {
 
   // done
   private getDefaultBinaryPath(): string {
-    return path.join(
-      BIN_DIR,
-      os.platform() === 'win32' ? 'yt-dlp.exe' : 'yt-dlp'
-    );
+    const platform = os.platform();
+    let binaryName: string;
+    if (platform === 'win32') {
+      binaryName = 'yt-dlp.exe';
+    } else if (platform === 'darwin') {
+      binaryName = 'yt-dlp_macos';
+    } else {
+      binaryName = 'yt-dlp';
+    }
+    return path.join(BIN_DIR, binaryName);
   }
 
   // done
