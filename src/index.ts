@@ -185,6 +185,8 @@ export class YtDlp {
       let stderrData = '';
 
       ytDlpProcess.stdout.on('data', (data) => {
+        // in `passThrough` case `data` is video bytes, don't collect it
+        if (passThrough) return;
         stdoutData += data.toString();
         onData?.(Buffer.from(data).toString());
       });
