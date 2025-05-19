@@ -281,7 +281,7 @@ export class YtDlp {
 
     const passThrough = new PassThrough();
 
-    this._executeAsync(
+    const promise = this._executeAsync(
       args,
       (data) => {
         const progress = stringToProgress(data);
@@ -293,6 +293,7 @@ export class YtDlp {
     );
 
     return {
+      promise: promise,
       pipe: (destination: NodeJS.WritableStream, options?: { end?: boolean }) =>
         passThrough.pipe(destination, options),
       pipeAsync: (
