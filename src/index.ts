@@ -16,6 +16,7 @@ import {
   VideoProgress,
   VideoThumbnail,
   YtDlpOptions,
+  InfoOptions,
 } from './types';
 import { createArgs } from './utils/args';
 import { extractThumbnails } from './utils/thumbnails';
@@ -310,9 +311,15 @@ export class YtDlp {
 
   // done
   public async getInfoAsync<T extends InfoType>(
-    url: string
+    url: string,
+    options: InfoOptions = { flatPlaylist: true }
   ): Promise<T extends 'video' ? VideoInfo : PlaylistInfo> {
-    const args = ['--dump-single-json', '--quiet', url];
+    const args = [
+      '--dump-single-json',
+      '--quiet',
+      options?.flatPlaylist ? '--flat-playlist' : '',
+      url,
+    ];
     const execResult = await this._executeAsync(args);
     return JSON.parse(execResult);
   }

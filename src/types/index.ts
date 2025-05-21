@@ -567,3 +567,7 @@ export interface GetFileOptions<F extends FormatKeyWord>
   filename?: string;
   metadata?: FileMetadata;
 }
+
+export interface InfoOptions {
+  flatPlaylist?: boolean;
+}

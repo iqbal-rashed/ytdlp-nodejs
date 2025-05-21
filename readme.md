@@ -262,6 +262,8 @@ Fetches detailed information about a video asynchronously.
 #### Parameters:
 
 - `url`: The URL of the video.
+- `options` (optional): Additional options.
+  - `flatPlaylist`: Boolean | (default `true`): Return a flat list with limited info; if `false`, fetch full info for each playlist video.
 
 #### Returns:
 
