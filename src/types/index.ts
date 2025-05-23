@@ -543,6 +543,7 @@ export interface FormatOptions<F extends FormatKeyWord>
 }
 
 export type PipeResponse = {
+  promise: Promise<string>;
   pipe: (
     destination: NodeJS.WritableStream,
     options?: {
