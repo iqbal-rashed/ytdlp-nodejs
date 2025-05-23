@@ -467,6 +467,7 @@ export interface VideoThumbnail {
 
 export interface VideoFormat {
   format_id: string;
+  format_note?: string;
   ext: string;
   url: string;
   width?: number;
