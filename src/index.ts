@@ -315,12 +315,12 @@ export class YtDlp {
   // done
   public async getInfoAsync<T extends InfoType>(
     url: string,
-    options: InfoOptions = { flatPlaylist: true }
+    options?: InfoOptions
   ): Promise<T extends 'video' ? VideoInfo : PlaylistInfo> {
     const args = [
       '--dump-single-json',
       '--quiet',
-      options?.flatPlaylist ? '--flat-playlist' : '',
+      ...createArgs({ flatPlaylist: true, ...options }),
       url,
     ];
     const execResult = await this._executeAsync(args);

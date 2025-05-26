@@ -572,4 +572,8 @@ export interface GetFileOptions<F extends FormatKeyWord>
 
 export interface InfoOptions {
   flatPlaylist?: boolean;
+  cookies?: string;
+  cookiesFromBrowser?: string;
+  noCookiesFromBrowser?: boolean;
+  noCookies?: boolean;
 }
