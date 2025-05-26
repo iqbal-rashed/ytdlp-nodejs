@@ -571,9 +571,30 @@ export interface GetFileOptions<F extends FormatKeyWord>
 }
 
 export interface InfoOptions {
+  /**
+   * If `true`, returns a flat list with limited information for playlist items.
+   * If `false`, fetches full information for each video in the playlist.
+   * @default true
+   */
   flatPlaylist?: boolean;
+
+  /**
+   * A string of cookies to use for authentication.
+   */
   cookies?: string;
+
+  /**
+   * Use cookies automatically fetched from the browser.
+   */
   cookiesFromBrowser?: string;
+
+  /**
+   * Disable using cookies from the browser.
+   */
   noCookiesFromBrowser?: boolean;
+
+  /**
+   * Disable cookies entirely (overrides other cookie options).
+   */
   noCookies?: boolean;
 }

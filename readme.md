@@ -189,7 +189,7 @@ Downloads a video from the given URL.
 
 - `url`: The URL of the video to download.
 - `options` (optional): Additional options for downloading, such as video format.
-  - `format`: String | [Format Options](#format-for-download).
+  - `format`: String | [Format Options](#format-options).
 
 #### Returns:
 
@@ -212,7 +212,7 @@ Asynchronously downloads a video from the given URL.
 
 - `url`: The URL of the video to download.
 - `options` (optional): Additional options for downloading, such as video format and a progress callback.
-  - `format`: String | [Format Options](#format-for-download).
+  - `format`: String | [Format Options](#format-options).
   - `onProgress`: An callback function to track progess of downloading.
 
 #### Returns:
@@ -238,7 +238,7 @@ Streams a video from the given URL.
 
 - `url`: The URL of the video to stream.
 - `options` (optional): Additional options for streaming, such as video format and a progress callback.
-  - `format`: String | [Format Options](#format-for-stream).
+  - `format`: String | [Format Options](#format-options).
   - `onProgress`: An callback function to track progess of downloading.
 
 #### Returns:
@@ -255,15 +255,31 @@ const ytdlpStream = ytDlp.stream(
 ytdlpStream.pipe(destinationStream);
 ```
 
-### `getInfoAsync(url): Promise<VideoInfo | PlaylistInfo>`
+### `getInfoAsync(url, options?): Promise<VideoInfo | PlaylistInfo>`
 
 Fetches detailed information about a video asynchronously.
 
 #### Parameters:
 
 - `url`: The URL of the video.
-- `options` (optional): Additional options.
-  - `flatPlaylist`: Boolean | (default `true`): Return a flat list with limited info; if `false`, fetch full info for each playlist video.
+- `options` (optional): InfoOptions
+  Additional options to control the fetching behavior:
+
+  - `flatPlaylist`?: `boolean` (default: `true`) |
+    If `true`, returns a flat list with limited information for playlist items.
+    If `false`, fetches full information for each video in the playlist.
+
+  - `cookies`?: `string` |
+    A raw cookie header string to be used for authenticated requests.
+
+  - `cookiesFromBrowser`?: `string` |
+    Uses cookies retrieved from the specified browser profile.
+
+  - `noCookiesFromBrowser`?: `boolean` |
+    If true, disables automatically retrieving cookies from the browser.
+
+  - `noCookies`?: `boolean` |
+    If true, disables the use of all cookies entirely (overrides other cookie options).
 
 #### Returns:
 
@@ -329,7 +345,7 @@ Returns a `File` object containing the video/audio data without saving it to dis
 
 - `url`: The URL of the video.
 - `options` (optional): Additional options for getting the file:
-  - `format`: String | [Format Options](#format-for-download)
+  - `format`: String | [Format Options](#format-options)
   - `filename`: Custom filename for the resulting file
   - `metadata`: Custom metadata for the file:
     - `name`: File name
