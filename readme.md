@@ -214,6 +214,7 @@ Asynchronously downloads a video from the given URL.
 - `options` (optional): Additional options for downloading, such as video format and a progress callback.
   - `format`: String | [Format Options](#format-options).
   - `onProgress`: An callback function to track progess of downloading.
+  * `output`: `string` — Custom output path and filename template. Uses [yt-dlp output template syntax](https://github.com/yt-dlp/yt-dlp#output-template). For example: `"./downloads/%(title)s.%(ext)s"`.
 
 #### Returns:
 
