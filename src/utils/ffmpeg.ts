@@ -37,8 +37,9 @@ function getFFmpegFileName(): string {
   return filename;
 }
 
-export async function downloadFFmpeg() {
-  const ffmpegBinary = findFFmpegBinary();
+export async function downloadFFmpeg(download_path?: string | undefined) {
+  const dir = download_path || BIN_DIR;
+  const ffmpegBinary = findFFmpegBinary(dir);
 
   if (ffmpegBinary) {
     return ffmpegBinary;
@@ -48,10 +49,10 @@ export async function downloadFFmpeg() {
 
   const downloadUrl: string = `${DOWNLOAD_BASE_URL}/${fileName}`;
 
-  const outputPath = path.join(BIN_DIR, fileName);
+  const outputPath = path.join(dir, fileName);
 
-  if (!fs.existsSync(BIN_DIR)) {
-    fs.mkdirSync(BIN_DIR, { recursive: true });
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   }
 
   console.log(`Downloading ffmpeg...`);
@@ -65,19 +66,21 @@ export async function downloadFFmpeg() {
       console.log('Error while chmod');
     }
 
-    await extractFile(outputPath, BIN_DIR);
+    await extractFile(outputPath, dir);
 
     fs.unlinkSync(outputPath);
 
-    return findFFmpegBinary();
+    return findFFmpegBinary(dir);
   } catch (error) {
     console.error(`Download failed: ${error}`);
     throw error;
   }
 }
 
-export function findFFmpegBinary() {
+export function findFFmpegBinary(custom_path?: string | undefined) {
   try {
+    const dir = custom_path || BIN_DIR;
+
     const platform = process.platform;
     const fileName = getFFmpegFileName();
 
@@ -85,7 +88,7 @@ export function findFFmpegBinary() {
 
     const folderName = getFolderName(fileName);
 
-    const ffmpegPath = path.join(BIN_DIR, folderName, 'bin', ffmpegFileName);
+    const ffmpegPath = path.join(dir, folderName, 'bin', ffmpegFileName);
     if (fs.existsSync(ffmpegPath)) {
       return ffmpegPath;
     } else {

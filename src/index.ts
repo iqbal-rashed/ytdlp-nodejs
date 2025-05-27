@@ -40,7 +40,7 @@ export class YtDlp {
     this.binaryPath = opt?.binaryPath || this.getDefaultBinaryPath();
     this.ffmpegPath = opt?.ffmpegPath;
 
-    const ffmpegBinary = findFFmpegBinary();
+    const ffmpegBinary = findFFmpegBinary(opt?.ffmpegPath);
 
     if (ffmpegBinary) {
       this.ffmpegPath = ffmpegBinary;
