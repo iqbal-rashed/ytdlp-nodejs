@@ -50,7 +50,10 @@ export async function downloadFFmpeg(download_path?: string) {
   const downloadUrl: string = `${DOWNLOAD_BASE_URL}/${fileName}`;
 
   const outputPath = path.join(dir, fileName);
+  const outputPath = path.join(dir, fileName);
 
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -67,9 +70,11 @@ export async function downloadFFmpeg(download_path?: string) {
     }
 
     await extractFile(outputPath, dir);
+    await extractFile(outputPath, dir);
 
     fs.unlinkSync(outputPath);
 
+    return findFFmpegBinary(dir);
     return findFFmpegBinary(dir);
   } catch (error) {
     console.error(`Download failed: ${error}`);
@@ -81,6 +86,8 @@ export function findFFmpegBinary(custom_path?: string) {
   try {
     const dir = custom_path || BIN_DIR;
 
+    const dir = custom_path || BIN_DIR;
+
     const platform = process.platform;
     const fileName = getFFmpegFileName();
 
@@ -88,6 +95,7 @@ export function findFFmpegBinary(custom_path?: string) {
 
     const folderName = getFolderName(fileName);
 
+    const ffmpegPath = path.join(dir, folderName, 'bin', ffmpegFileName);
     const ffmpegPath = path.join(dir, folderName, 'bin', ffmpegFileName);
     if (fs.existsSync(ffmpegPath)) {
       return ffmpegPath;
