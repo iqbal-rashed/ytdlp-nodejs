@@ -1,4 +1,5 @@
 import path from 'path';
+import child_process from 'child_process';
 
 import fs from 'fs';
 import { downloadFile } from './request';
@@ -22,6 +23,9 @@ const PLATFORM_MAPPINGS: Record<string, Record<string, string[]>> = {
   darwin: {
     x64: ['mac/x64', '7zz'],
     arm64: ['mac/arm64', '7zz'],
+  },
+  android: {
+    arm64: ['linux/arm64', '7zz'],
   },
 };
 
@@ -71,7 +75,17 @@ export async function download7zip() {
 }
 
 export function find7zipPath() {
+  if (process.platform === 'android') {
+    try {
+      return child_process.execSync('command -v 7zz').toString().trim();
+    } catch (error) {
+      console.error('Cannot find 7zip');
+      throw error;
+    }
+  }
+
   const namepath = get7zipNamePath();
+
   const outputPath = path.join(BIN_DIR, namepath[1]);
 
   return fs.existsSync(outputPath) ? outputPath : undefined;

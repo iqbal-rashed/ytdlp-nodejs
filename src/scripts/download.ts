@@ -20,6 +20,9 @@ const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
     x64: 'yt-dlp_macos',
     arm64: 'yt-dlp_macos',
   },
+  android: {
+    arm64: 'yt-dlp',
+  },
 };
 
 function getYtdlpFilename(): string {
