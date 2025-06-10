@@ -15,343 +15,343 @@ permissions:
 jobs:
   update-ffmpeg-builds:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y p7zip-full curl jq
-        
-    - name: Get latest FFmpeg builds release info
-      id: get-builds
-      run: |
-        # Get the latest release info from FFmpeg-Builds
-        LATEST_RELEASE=$(curl -s "https://api.github.com/repos/yt-dlp/FFmpeg-Builds/releases/latest")
-        RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
-        
-        echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
-        echo "Latest FFmpeg-Builds release: $RELEASE_TAG"
-        
-    - name: Download and extract FFmpeg builds
-      run: |
-        # Create directory for downloads and organized files
-        mkdir -p downloads
-        mkdir -p organized/{linux,windows,macos}/{x64,arm64}
-        
-        # Base URL for downloads
-        BASE_URL="https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest"
-        
-        # Define file mappings based on your code
-        declare -A DOWNLOADS=(
-          # Windows builds
-          ["windows-x64-ffmpeg"]="ffmpeg-master-latest-win64-gpl.zip"
-          ["windows-ia32-ffmpeg"]="ffmpeg-master-latest-win32-gpl.zip"
-          ["windows-arm64-ffmpeg"]="ffmpeg-master-latest-winarm64-gpl.zip"
-          
-          # Linux builds
-          ["linux-x64-ffmpeg"]="ffmpeg-master-latest-linux64-gpl.tar.xz"
-          ["linux-arm64-ffmpeg"]="ffmpeg-master-latest-linuxarm64-gpl.tar.xz"
-          
-          # macOS custom builds
-          ["macos-arm64-ffmpeg"]="https://www.osxexperts.net/ffmpeg711arm.zip"
-          ["macos-arm64-ffprobe"]="https://www.osxexperts.net/ffprobe711arm.zip"
-          ["macos-x64-ffmpeg"]="https://www.osxexperts.net/ffmpeg71intel.zip"
-          ["macos-x64-ffprobe"]="https://www.osxexperts.net/ffprobe71intel.zip"
-        )
-        
-        # Download files
-        for key in "${!DOWNLOADS[@]}"; do
-          file="${DOWNLOADS[$key]}"
-          
-          if [[ $file == https://* ]]; then
-            # Direct URL download for macOS files
-            download_url="$file"
-            filename=$(basename "$file")
-          else
-            # GitHub release download
-            download_url="$BASE_URL/$file"
-            filename="$file"
-          fi
-          
-          echo "Downloading: $filename from $download_url"
-          curl -L -o "downloads/$filename" "$download_url"
-          
-          if [ $? -eq 0 ]; then
-            echo "✅ Downloaded: $filename"
-          else
-            echo "❌ Failed to download: $filename"
-          fi
-        done
-        
-        # List downloaded files
-        echo "Downloaded files:"
-        ls -la downloads/
-        
-    - name: Extract and organize files
-      run: |
-        cd downloads
-        
-        # Function to extract different archive types
-        extract_file() {
-          local file="$1"
-          local extract_dir="$2"
-          
-          mkdir -p "$extract_dir"
-          
-          case "$file" in
-            *.zip)
-              echo "Extracting ZIP: $file"
-              unzip -q "$file" -d "$extract_dir"
-              ;;
-            *.tar.xz)
-              echo "Extracting TAR.XZ: $file"
-              tar -xf "$file" -C "$extract_dir"
-              ;;
-            *.7z)
-              echo "Extracting 7Z: $file"
-              7z x "$file" -o"$extract_dir"
-              ;;
-            *)
-              echo "Unknown archive type: $file"
-              return 1
-              ;;
-          esac
-        }
-        
-        # Function to find and copy executables
-        copy_executables() {
-          local source_dir="$1"
-          local target_dir="$2"
-          local platform="$3"
-          
-          mkdir -p "$target_dir"
-          
-          # Find ffmpeg and ffprobe executables
-          if [ "$platform" = "windows" ]; then
-            find "$source_dir" -name "ffmpeg.exe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
-            find "$source_dir" -name "ffprobe.exe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
-          else
-            find "$source_dir" -name "ffmpeg" -type f -executable -exec cp {} "$target_dir/" \; 2>/dev/null || true
-            find "$source_dir" -name "ffprobe" -type f -executable -exec cp {} "$target_dir/" \; 2>/dev/null || true
-          fi
-        }
-        
-        # Process each downloaded file
-        for file in *.zip *.tar.xz *.7z; do
-          if [ -f "$file" ]; then
-            echo "Processing: $file"
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full curl jq
+
+      - name: Get latest FFmpeg builds release info
+        id: get-builds
+        run: |
+          # Get the latest release info from FFmpeg-Builds
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/yt-dlp/FFmpeg-Builds/releases/latest")
+          RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tag_name')
+
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "Latest FFmpeg-Builds release: $RELEASE_TAG"
+
+      - name: Download and extract FFmpeg builds
+        run: |
+          # Create directory for downloads and organized files
+          mkdir -p downloads
+          mkdir -p organized/{linux,win,macos}/{x64,arm64}
+
+          # Base URL for downloads
+          BASE_URL="https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest"
+
+          # Define file mappings based on your code
+          declare -A DOWNLOADS=(
+            # Windows builds
+            ["win-x64-ffmpeg"]="ffmpeg-master-latest-win64-gpl.zip"
+            ["win-ia32-ffmpeg"]="ffmpeg-master-latest-win32-gpl.zip"
+            ["win-arm64-ffmpeg"]="ffmpeg-master-latest-winarm64-gpl.zip"
             
-            # Determine platform and architecture from filename
-            platform=""
-            arch=""
+            # Linux builds
+            ["linux-x64-ffmpeg"]="ffmpeg-master-latest-linux64-gpl.tar.xz"
+            ["linux-arm64-ffmpeg"]="ffmpeg-master-latest-linuxarm64-gpl.tar.xz"
+            
+            # macOS custom builds
+            ["macos-arm64-ffmpeg"]="https://www.osxexperts.net/ffmpeg711arm.zip"
+            ["macos-arm64-ffprobe"]="https://www.osxexperts.net/ffprobe711arm.zip"
+            ["macos-x64-ffmpeg"]="https://www.osxexperts.net/ffmpeg71intel.zip"
+            ["macos-x64-ffprobe"]="https://www.osxexperts.net/ffprobe71intel.zip"
+          )
+
+          # Download files
+          for key in "${!DOWNLOADS[@]}"; do
+            file="${DOWNLOADS[$key]}"
+            
+            if [[ $file == https://* ]]; then
+              # Direct URL download for macOS files
+              download_url="$file"
+              filename=$(basename "$file")
+            else
+              # GitHub release download
+              download_url="$BASE_URL/$file"
+              filename="$file"
+            fi
+            
+            echo "Downloading: $filename from $download_url"
+            curl -L -o "downloads/$filename" "$download_url"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Downloaded: $filename"
+            else
+              echo "❌ Failed to download: $filename"
+            fi
+          done
+
+          # List downloaded files
+          echo "Downloaded files:"
+          ls -la downloads/
+
+      - name: Extract and organize files
+        run: |
+          cd downloads
+
+          # Function to extract different archive types
+          extract_file() {
+            local file="$1"
+            local extract_dir="$2"
+            
+            mkdir -p "$extract_dir"
             
             case "$file" in
-              *win64*|*win32*|*winarm64*)
-                platform="windows"
-                if [[ "$file" == *"win64"* ]]; then
-                  arch="x64"
-                elif [[ "$file" == *"win32"* ]]; then
-                  arch="ia32"  # Keep as ia32 to match your mapping
-                elif [[ "$file" == *"winarm64"* ]]; then
-                  arch="arm64"
-                fi
+              *.zip)
+                echo "Extracting ZIP: $file"
+                unzip -q "$file" -d "$extract_dir"
                 ;;
-              *linux64*|*linuxarm64*)
-                platform="linux"
-                if [[ "$file" == *"linux64"* ]]; then
-                  arch="x64"
-                elif [[ "$file" == *"linuxarm64"* ]]; then
-                  arch="arm64"
-                fi
+              *.tar.xz)
+                echo "Extracting TAR.XZ: $file"
+                tar -xf "$file" -C "$extract_dir"
                 ;;
-              *ffmpeg711arm*|*ffprobe711arm*)
-                platform="macos"
-                arch="arm64"
+              *.7z)
+                echo "Extracting 7Z: $file"
+                7z x "$file" -o"$extract_dir"
                 ;;
-              *ffmpeg71intel*|*ffprobe71intel*)
-                platform="macos"
-                arch="x64"
+              *)
+                echo "Unknown archive type: $file"
+                return 1
                 ;;
             esac
+          }
+
+          # Function to find and copy executables
+          copy_executables() {
+            local source_dir="$1"
+            local target_dir="$2"
+            local platform="$3"
             
-            if [ -n "$platform" ] && [ -n "$arch" ]; then
-              extract_dir="temp_$(basename "$file" | tr '.' '_')"
-              extract_file "$file" "$extract_dir"
-              
-              # For macOS files from osxexperts.net, the executable is directly in the zip
-              if [[ "$file" == *"osxexperts"* ]]; then
-                target_dir="../organized/$platform/$arch"
-                mkdir -p "$target_dir"
-                
-                # Copy the executable directly (it should be in the root of extracted folder)
-                if [[ "$file" == *"ffmpeg"* ]]; then
-                  find "$extract_dir" -name "ffmpeg" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
-                elif [[ "$file" == *"ffprobe"* ]]; then
-                  find "$extract_dir" -name "ffprobe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
-                fi
-              else
-                # For regular builds, look in bin directory
-                copy_executables "$extract_dir" "../organized/$platform/$arch" "$platform"
-              fi
-              
-              # Clean up extraction directory
-              rm -rf "$extract_dir"
+            mkdir -p "$target_dir"
+            
+            # Find ffmpeg and ffprobe executables
+            if [ "$platform" = "win" ]; then
+              find "$source_dir" -name "ffmpeg.exe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
+              find "$source_dir" -name "ffprobe.exe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
             else
-              echo "Could not determine platform/arch for: $file"
+              find "$source_dir" -name "ffmpeg" -type f -executable -exec cp {} "$target_dir/" \; 2>/dev/null || true
+              find "$source_dir" -name "ffprobe" -type f -executable -exec cp {} "$target_dir/" \; 2>/dev/null || true
             fi
-          fi
-        done
-        
-        cd ..
-        
-        # Make all executables have proper permissions
-        find organized -type f -exec chmod +x {} \; 2>/dev/null || true
-        
-        # List organized files
-        echo "Organized files:"
-        find organized -type f | sort
-        
-    - name: Check for existing release
-      id: check-release
-      run: |
-        # Check if release already exists
-        RELEASE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases/tags/ffmpeg-latest")
-        
-        echo "release_exists=$RELEASE_EXISTS" >> $GITHUB_OUTPUT
-        echo "Release check status: $RELEASE_EXISTS"
-        
-    - name: Delete existing release if it exists
-      if: steps.check-release.outputs.release_exists == '200'
-      run: |
-        # Get release ID
-        RELEASE_ID=$(curl -s \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases/tags/ffmpeg-latest" | jq -r '.id')
-        
-        # Delete the release
-        curl -X DELETE \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
-        
-        echo "Deleted existing release"
-        
-    - name: Create new release
-      id: create-release
-      run: |
-        # Get current timestamp
-        CURRENT_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
-        
-        # Create release body
-        RELEASE_BODY="Latest FFmpeg and FFprobe builds extracted from:
-        - yt-dlp/FFmpeg-Builds release: ${{ steps.get-builds.outputs.release_tag }}
-        - macOS builds from osxexperts.net
-        
-        Updated: $CURRENT_TIME
-        
-        These are raw executable files ready for use. Only ffmpeg and ffprobe binaries are included."
-        
-        # Create new release using proper JSON escaping
-        RESPONSE=$(curl -s -X POST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          "https://api.github.com/repos/${{ github.repository }}/releases" \
-          --data-raw "$(cat <<EOF
-        {
-          "tag_name": "ffmpeg-latest",
-          "name": "Latest FFmpeg & FFprobe Builds (Raw)",
-          "body": $(echo "$RELEASE_BODY" | jq -R -s .),
-          "draft": false,
-          "prerelease": false
-        }
-        EOF
-        )")
-        
-        echo "API Response: $RESPONSE"
-        
-        # Check if response contains error
-        if echo "$RESPONSE" | jq -e '.message' > /dev/null 2>&1; then
-          echo "Error creating release: $(echo "$RESPONSE" | jq -r '.message')"
-          exit 1
-        fi
-        
-        UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.upload_url' | sed 's/{?name,label}//')
-        
-        if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
-          echo "Failed to get upload URL from response"
-          echo "Full response: $RESPONSE"
-          exit 1
-        fi
-        
-        echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
-        echo "Created release with upload URL: $UPLOAD_URL"
-        
-    - name: Upload extracted executables
-      run: |
-        cd organized
-        
-        # Upload files from each platform/arch combination
-        find . -type f | while read file; do
-          # Remove leading ./
-          clean_path=${file#./}
-          # Create descriptive filename: platform-arch-executable
-          upload_name=$(echo "$clean_path" | tr '/' '-')
-          
-          echo "Uploading: $file as $upload_name"
-          
-          # Get file size for progress
-          file_size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "unknown")
-          echo "File size: $file_size bytes"
-          
-          curl -X POST \
+          }
+
+          # Process each downloaded file
+          for file in *.zip *.tar.xz *.7z; do
+            if [ -f "$file" ]; then
+              echo "Processing: $file"
+              
+              # Determine platform and architecture from filename
+              platform=""
+              arch=""
+              
+              case "$file" in
+                *win64*|*win32*|*winarm64*)
+                  platform="win"
+                  if [[ "$file" == *"win64"* ]]; then
+                    arch="x64"
+                  elif [[ "$file" == *"win32"* ]]; then
+                    arch="ia32"  # Keep as ia32 to match your mapping
+                  elif [[ "$file" == *"winarm64"* ]]; then
+                    arch="arm64"
+                  fi
+                  ;;
+                *linux64*|*linuxarm64*)
+                  platform="linux"
+                  if [[ "$file" == *"linux64"* ]]; then
+                    arch="x64"
+                  elif [[ "$file" == *"linuxarm64"* ]]; then
+                    arch="arm64"
+                  fi
+                  ;;
+                *ffmpeg711arm*|*ffprobe711arm*)
+                  platform="macos"
+                  arch="arm64"
+                  ;;
+                *ffmpeg71intel*|*ffprobe71intel*)
+                  platform="macos"
+                  arch="x64"
+                  ;;
+              esac
+              
+              if [ -n "$platform" ] && [ -n "$arch" ]; then
+                extract_dir="temp_$(basename "$file" | tr '.' '_')"
+                extract_file "$file" "$extract_dir"
+                
+                # For macOS files from osxexperts.net, the executable is directly in the zip
+                if [[ "$file" == *"osxexperts"* ]]; then
+                  target_dir="../organized/$platform/$arch"
+                  mkdir -p "$target_dir"
+                  
+                  # Copy the executable directly (it should be in the root of extracted folder)
+                  if [[ "$file" == *"ffmpeg"* ]]; then
+                    find "$extract_dir" -name "ffmpeg" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
+                  elif [[ "$file" == *"ffprobe"* ]]; then
+                    find "$extract_dir" -name "ffprobe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
+                  fi
+                else
+                  # For regular builds, look in bin directory
+                  copy_executables "$extract_dir" "../organized/$platform/$arch" "$platform"
+                fi
+                
+                # Clean up extraction directory
+                rm -rf "$extract_dir"
+              else
+                echo "Could not determine platform/arch for: $file"
+              fi
+            fi
+          done
+
+          cd ..
+
+          # Make all executables have proper permissions
+          find organized -type f -exec chmod +x {} \; 2>/dev/null || true
+
+          # List organized files
+          echo "Organized files:"
+          find organized -type f | sort
+
+      - name: Check for existing release
+        id: check-release
+        run: |
+          # Check if release already exists
+          RELEASE_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/octet-stream" \
-            --data-binary "@$file" \
-            "${{ steps.create-release.outputs.upload_url }}?name=$upload_name" \
-            --progress-bar
-            
-          if [ $? -eq 0 ]; then
-            echo "✅ Uploaded: $upload_name"
-          else
-            echo "❌ Failed to upload: $upload_name"
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/ffmpeg-latest")
+
+          echo "release_exists=$RELEASE_EXISTS" >> $GITHUB_OUTPUT
+          echo "Release check status: $RELEASE_EXISTS"
+
+      - name: Delete existing release if it exists
+        if: steps.check-release.outputs.release_exists == '200'
+        run: |
+          # Get release ID
+          RELEASE_ID=$(curl -s \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/tags/ffmpeg-latest" | jq -r '.id')
+
+          # Delete the release
+          curl -X DELETE \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID"
+
+          echo "Deleted existing release"
+
+      - name: Create new release
+        id: create-release
+        run: |
+          # Get current timestamp
+          CURRENT_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          # Create release body
+          RELEASE_BODY="Latest FFmpeg and FFprobe builds extracted from:
+          - yt-dlp/FFmpeg-Builds release: ${{ steps.get-builds.outputs.release_tag }}
+          - macOS builds from osxexperts.net
+
+          Updated: $CURRENT_TIME
+
+          These are raw executable files ready for use. Only ffmpeg and ffprobe binaries are included."
+
+          # Create new release using proper JSON escaping
+          RESPONSE=$(curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" \
+            --data-raw "$(cat <<EOF
+          {
+            "tag_name": "ffmpeg-latest",
+            "name": "Latest FFmpeg & FFprobe Builds (Raw)",
+            "body": $(echo "$RELEASE_BODY" | jq -R -s .),
+            "draft": false,
+            "prerelease": false
+          }
+          EOF
+          )")
+
+          echo "API Response: $RESPONSE"
+
+          # Check if response contains error
+          if echo "$RESPONSE" | jq -e '.message' > /dev/null 2>&1; then
+            echo "Error creating release: $(echo "$RESPONSE" | jq -r '.message')"
+            exit 1
           fi
-        done
-        
-    - name: Verify uploads and summary
-      run: |
-        echo "🎉 FFmpeg Build Update Complete!"
-        echo ""
-        echo "📦 Sources:"
-        echo "  - yt-dlp/FFmpeg-Builds: ${{ steps.get-builds.outputs.release_tag }}"
-        echo "  - macOS builds: osxexperts.net"
-        echo ""
-        echo "🎯 Target: ${{ github.repository }} ffmpeg-latest release"
-        echo ""
-        echo "📁 Files uploaded:"
-        cd organized
-        file_count=$(find . -type f | wc -l)
-        echo "  Total: $file_count executable files"
-        echo ""
-        echo "📋 File breakdown:"
-        find . -type f | while read file; do
-          clean_path=${file#./}
-          upload_name=$(echo "$clean_path" | tr '/' '-')
-          file_size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "0")
-          echo "  - $upload_name ($(numfmt --to=iec $file_size 2>/dev/null || echo $file_size) bytes)"
-        done
-        
-        # Verify we have the expected files
-        echo ""
-        echo "✅ Verification:"
-        [ -f "windows/x64/ffmpeg.exe" ] && echo "  ✓ Windows x64 ffmpeg" || echo "  ✗ Windows x64 ffmpeg missing"
-        [ -f "windows/x64/ffprobe.exe" ] && echo "  ✓ Windows x64 ffprobe" || echo "  ✗ Windows x64 ffprobe missing"
-        [ -f "linux/x64/ffmpeg" ] && echo "  ✓ Linux x64 ffmpeg" || echo "  ✗ Linux x64 ffmpeg missing"
-        [ -f "linux/x64/ffprobe" ] && echo "  ✓ Linux x64 ffprobe" || echo "  ✗ Linux x64 ffprobe missing"
-        [ -f "macos/arm64/ffmpeg" ] && echo "  ✓ macOS ARM64 ffmpeg" || echo "  ✗ macOS ARM64 ffmpeg missing"
-        [ -f "macos/arm64/ffprobe" ] && echo "  ✓ macOS ARM64 ffprobe" || echo "  ✗ macOS ARM64 ffprobe missing"
-        [ -f "macos/x64/ffmpeg" ] && echo "  ✓ macOS Intel ffmpeg" || echo "  ✗ macOS Intel ffmpeg missing"
-        [ -f "macos/x64/ffprobe" ] && echo "  ✓ macOS Intel ffprobe" || echo "  ✗ macOS Intel ffprobe missing"
+
+          UPLOAD_URL=$(echo "$RESPONSE" | jq -r '.upload_url' | sed 's/{?name,label}//')
+
+          if [ "$UPLOAD_URL" = "null" ] || [ -z "$UPLOAD_URL" ]; then
+            echo "Failed to get upload URL from response"
+            echo "Full response: $RESPONSE"
+            exit 1
+          fi
+
+          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
+          echo "Created release with upload URL: $UPLOAD_URL"
+
+      - name: Upload extracted executables
+        run: |
+          cd organized
+
+          # Upload files from each platform/arch combination
+          find . -type f | while read file; do
+            # Remove leading ./
+            clean_path=${file#./}
+            # Create descriptive filename: platform-arch-executable
+            upload_name=$(echo "$clean_path" | tr '/' '-')
+            
+            echo "Uploading: $file as $upload_name"
+            
+            # Get file size for progress
+            file_size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "unknown")
+            echo "File size: $file_size bytes"
+            
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: application/octet-stream" \
+              --data-binary "@$file" \
+              "${{ steps.create-release.outputs.upload_url }}?name=$upload_name" \
+              --progress-bar
+              
+            if [ $? -eq 0 ]; then
+              echo "✅ Uploaded: $upload_name"
+            else
+              echo "❌ Failed to upload: $upload_name"
+            fi
+          done
+
+      - name: Verify uploads and summary
+        run: |
+          echo "🎉 FFmpeg Build Update Complete!"
+          echo ""
+          echo "📦 Sources:"
+          echo "  - yt-dlp/FFmpeg-Builds: ${{ steps.get-builds.outputs.release_tag }}"
+          echo "  - macOS builds: osxexperts.net"
+          echo ""
+          echo "🎯 Target: ${{ github.repository }} ffmpeg-latest release"
+          echo ""
+          echo "📁 Files uploaded:"
+          cd organized
+          file_count=$(find . -type f | wc -l)
+          echo "  Total: $file_count executable files"
+          echo ""
+          echo "📋 File breakdown:"
+          find . -type f | while read file; do
+            clean_path=${file#./}
+            upload_name=$(echo "$clean_path" | tr '/' '-')
+            file_size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo "0")
+            echo "  - $upload_name ($(numfmt --to=iec $file_size 2>/dev/null || echo $file_size) bytes)"
+          done
+
+          # Verify we have the expected files
+          echo ""
+          echo "✅ Verification:"
+          [ -f "win/x64/ffmpeg.exe" ] && echo "  ✓ Windows x64 ffmpeg" || echo "  ✗ Windows x64 ffmpeg missing"
+          [ -f "win/x64/ffprobe.exe" ] && echo "  ✓ Windows x64 ffprobe" || echo "  ✗ Windows x64 ffprobe missing"
+          [ -f "linux/x64/ffmpeg" ] && echo "  ✓ Linux x64 ffmpeg" || echo "  ✗ Linux x64 ffmpeg missing"
+          [ -f "linux/x64/ffprobe" ] && echo "  ✓ Linux x64 ffprobe" || echo "  ✗ Linux x64 ffprobe missing"
+          [ -f "macos/arm64/ffmpeg" ] && echo "  ✓ macOS ARM64 ffmpeg" || echo "  ✗ macOS ARM64 ffmpeg missing"
+          [ -f "macos/arm64/ffprobe" ] && echo "  ✓ macOS ARM64 ffprobe" || echo "  ✗ macOS ARM64 ffprobe missing"
+          [ -f "macos/x64/ffmpeg" ] && echo "  ✓ macOS Intel ffmpeg" || echo "  ✗ macOS Intel ffmpeg missing"
+          [ -f "macos/x64/ffprobe" ] && echo "  ✓ macOS Intel ffprobe" || echo "  ✗ macOS Intel ffprobe missing"
