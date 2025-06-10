@@ -22,6 +22,9 @@ const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
     x64: 'ffmpeg-master-latest-macos64-gpl.zip',
     arm64: 'ffmpeg-master-latest-macosarm64-gpl.zip',
   },
+  android: {
+    arm64: 'ffmpeg-master-latest-linuxarm64-gpl.tar.xz',
+  },
 };
 
 function getFFmpegFileName(): string {
