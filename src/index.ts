@@ -27,7 +27,10 @@ import {
 } from './utils/format';
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
-import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
+import {
+  downloadFFmpeg as downloadBuilds,
+  findFFmpegBinary,
+} from './utils/ffmpeg';
 
 export const BIN_DIR = path.join(__dirname, '..', 'bin');
 
@@ -349,7 +352,7 @@ export class YtDlp {
   }
 
   public async downloadFFmpeg() {
-    return downloadFFmpeg();
+    return downloadBuilds();
   }
 
   public async getFileAsync<F extends FormatKeyWord>(
@@ -399,6 +402,8 @@ export class YtDlp {
     });
   }
 }
+
+export const downloadFFmpeg = downloadBuilds;
 
 export type {
   ArgsOptions,
