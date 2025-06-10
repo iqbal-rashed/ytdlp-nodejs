@@ -39,7 +39,7 @@ jobs:
         run: |
           # Create directory for downloads and organized files
           mkdir -p downloads
-          mkdir -p organized/{linux,windows,macos}/{x64,arm64}
+          mkdir -p organized/{linux,win,macos}/{x64,arm64}
 
           # Base URL for downloads
           BASE_URL="https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest"
@@ -130,7 +130,7 @@ jobs:
             mkdir -p "$target_dir"
             
             # Find ffmpeg and ffprobe executables
-            if [ "$platform" = "windows" ]; then
+            if [ "$platform" = "win" ]; then
               find "$source_dir" -name "ffmpeg.exe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
               find "$source_dir" -name "ffprobe.exe" -type f -exec cp {} "$target_dir/" \; 2>/dev/null || true
             else
@@ -150,7 +150,7 @@ jobs:
               
               case "$file" in
                 *win64*|*win32*|*winarm64*)
-                  platform="windows"
+                  platform="win"
                   if [[ "$file" == *"win64"* ]]; then
                     arch="x64"
                   elif [[ "$file" == *"win32"* ]]; then
