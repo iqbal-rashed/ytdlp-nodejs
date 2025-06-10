@@ -1,43 +1,41 @@
 import path from 'path';
 import fs from 'fs';
 import { downloadFile } from './request';
-import { download7zip } from './7zip';
-import { execSync } from 'child_process';
 import { BIN_DIR } from '..';
 
 const DOWNLOAD_BASE_URL =
-  'https://github.com/yt-dlp/FFmpeg-Builds/releases/download/latest';
+  'https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-latest';
 
-const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
+const PLATFORM_MAPPINGS: Record<string, Record<string, string[]>> = {
   win32: {
-    x64: 'ffmpeg-master-latest-win64-gpl.zip',
-    ia32: 'ffmpeg-master-latest-win32-gpl.zip',
-    arm64: 'ffmpeg-master-latest-winarm64-gpl.zip',
+    x64: ['win-x64-ffmpeg.exe', 'win-x64-ffprobe.exe'],
+    ia32: ['win-ia32-ffmpeg.exe', 'win-ia32-ffprobe.exe'],
+    arm64: ['win-arm64-ffmpeg.exe', 'win-arm64-ffprobe.exe'],
   },
   linux: {
-    x64: 'ffmpeg-master-latest-linux64-gpl.tar.xz',
-    arm64: 'ffmpeg-master-latest-linuxarm64-gpl.tar.xz',
+    x64: ['linux-x64-ffmpeg', 'linux-x64-ffprobe'],
+    arm64: ['linux-arm64-ffmpeg', 'linux-arm64-ffprobe'],
   },
   darwin: {
-    x64: 'ffmpeg-master-latest-macos64-gpl.zip',
-    arm64: 'ffmpeg-master-latest-macosarm64-gpl.zip',
+    x64: ['macos-x64-ffmpeg', 'macos-x64-ffprobe'],
+    arm64: ['macos-arm64-ffmpeg', 'macos-arm64-ffprobe'],
   },
   android: {
-    arm64: 'ffmpeg-master-latest-linuxarm64-gpl.tar.xz',
+    arm64: ['linux-arm64-ffmpeg', 'linux-arm64-ffprobe'],
   },
 };
 
-function getFFmpegFileName(): string {
+function getBuildsArray(): string[] {
   const platform = process.platform as string;
   const arch = process.arch as string;
 
   if (!PLATFORM_MAPPINGS[platform] || !PLATFORM_MAPPINGS[platform][arch]) {
-    throw new Error(`No FFmpeg build available for ${platform} ${arch}`);
+    throw new Error(
+      `No FFmpeg build available for platform: ${platform}, architecture: ${arch}`
+    );
   }
 
-  const filename = PLATFORM_MAPPINGS[platform][arch];
-
-  return filename;
+  return PLATFORM_MAPPINGS[platform][arch];
 }
 
 export async function downloadFFmpeg() {
@@ -47,30 +45,38 @@ export async function downloadFFmpeg() {
     return ffmpegBinary;
   }
 
-  const fileName = getFFmpegFileName();
-
-  const downloadUrl: string = `${DOWNLOAD_BASE_URL}/${fileName}`;
-
-  const outputPath = path.join(BIN_DIR, fileName);
-
-  if (!fs.existsSync(BIN_DIR)) {
-    fs.mkdirSync(BIN_DIR, { recursive: true });
-  }
-
-  console.log(`Downloading ffmpeg...`);
-
   try {
-    await downloadFile(downloadUrl, outputPath);
-    console.log(`ffmpeg downloaded successfully to: ${outputPath}`);
-    try {
-      fs.chmodSync(outputPath, 0o755);
-    } catch {
-      console.log('Error while chmod');
+    const buildsArr = getBuildsArray();
+
+    if (!buildsArr.length) throw new Error();
+
+    const downloadUrls = buildsArr.map((v) => `${DOWNLOAD_BASE_URL}/${v}`);
+
+    const outputPaths = buildsArr.map((v) => path.join(BIN_DIR, v));
+
+    if (!fs.existsSync(BIN_DIR)) {
+      fs.mkdirSync(BIN_DIR, { recursive: true });
     }
 
-    await extractFile(outputPath, BIN_DIR);
+    console.log('Downloading FFmpeg and FFprobe...');
 
-    fs.unlinkSync(outputPath);
+    for (let i = 0; i < buildsArr.length; i++) {
+      const downloadUrl = downloadUrls[i];
+      const outputPath = outputPaths[i];
+      console.log('Downloading...', path.basename(downloadUrl));
+      await downloadFile(downloadUrl, outputPath);
+    }
+
+    // Set executable permissions (Unix-like systems)
+    try {
+      for (const outputPath of outputPaths) {
+        fs.chmodSync(outputPath, 0o755);
+      }
+    } catch {
+      console.log(
+        'Note: Could not set executable permissions (likely Windows)'
+      );
+    }
 
     return findFFmpegBinary();
   } catch (error) {
@@ -81,51 +87,18 @@ export async function downloadFFmpeg() {
 
 export function findFFmpegBinary() {
   try {
-    const platform = process.platform;
-    const fileName = getFFmpegFileName();
+    const buildsArr = getBuildsArray();
 
-    const ffmpegFileName = platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg';
+    if (!buildsArr.length) throw new Error();
 
-    const folderName = getFolderName(fileName);
+    const ffmpegPath = path.join(BIN_DIR, buildsArr[0]);
 
-    const ffmpegPath = path.join(BIN_DIR, folderName, 'bin', ffmpegFileName);
-    if (fs.existsSync(ffmpegPath)) {
-      return ffmpegPath;
-    } else {
+    if (!fs.existsSync(ffmpegPath)) {
       throw new Error('FFmpeg binary not found. Please download it first.');
     }
+
+    return ffmpegPath;
   } catch {
     return undefined;
   }
-}
-
-export async function extractFile(filePath: string, targetPath: string) {
-  try {
-    const path7zip = await download7zip();
-    const isTar = filePath.includes('tar.xz');
-
-    if (isTar) {
-      execSync(`"${path7zip}" x "${filePath}" -aoa -o"${targetPath}"`);
-
-      execSync(
-        `"${path7zip}" x "${path.join(
-          targetPath,
-          path.basename(filePath, path.extname(filePath))
-        )}" -aoa -o"${targetPath}"`
-      );
-    } else {
-      execSync(`"${path7zip}" x "${filePath}" -aoa -o"${targetPath}"`);
-    }
-  } catch (error) {
-    console.error('Error extracting file:', error);
-    throw error;
-  }
-}
-
-function getFolderName(fn: string) {
-  let fx = path.basename(fn, path.extname(fn));
-  if (path.extname(fx)) {
-    fx = getFolderName(fx);
-  }
-  return fx;
 }
