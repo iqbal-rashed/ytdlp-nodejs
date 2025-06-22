@@ -18,13 +18,4 @@ export default defineConfig([
     minify: true,
     shims: true,
   },
-  {
-    entry: ['src/utils/utils.ts'],
-    format: ['cjs', 'esm'],
-    dts: true,
-    splitting: false,
-    clean: true,
-    minify: true,
-    shims: true,
-  },
 ]);

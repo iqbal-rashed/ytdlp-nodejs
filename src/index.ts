@@ -28,6 +28,7 @@ import {
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
+import { downloadFile } from './utils/request';
 
 export const BIN_DIR = path.join(__dirname, '..', 'bin');
 
@@ -399,6 +400,20 @@ export class YtDlp {
     });
   }
 }
+
+export const helpers = {
+  downloadFFmpeg,
+  findFFmpegBinary,
+  PROGRESS_STRING,
+  getContentType,
+  getFileExtension,
+  parseFormatOptions,
+  stringToProgress,
+  createArgs,
+  extractThumbnails,
+  downloadFile,
+  BIN_DIR,
+};
 
 export type {
   ArgsOptions,

@@ -52,7 +52,9 @@ export async function downloadFFmpeg() {
 
     const downloadUrls = buildsArr.map((v) => `${DOWNLOAD_BASE_URL}/${v}`);
 
-    const outputPaths = buildsArr.map((v) => path.join(BIN_DIR, v));
+    const outputPaths = buildsArr.map((v) =>
+      path.join(BIN_DIR, String(v.split('-').pop()))
+    );
 
     if (!fs.existsSync(BIN_DIR)) {
       fs.mkdirSync(BIN_DIR, { recursive: true });
@@ -91,7 +93,10 @@ export function findFFmpegBinary() {
 
     if (!buildsArr.length) throw new Error();
 
-    const ffmpegPath = path.join(BIN_DIR, buildsArr[0]);
+    const ffmpegPath = path.join(
+      BIN_DIR,
+      String(buildsArr[0].split('-').pop())
+    );
 
     if (!fs.existsSync(ffmpegPath)) {
       throw new Error('FFmpeg binary not found. Please download it first.');
