@@ -104,7 +104,7 @@ export function getContentType(
         case 'flac':
           return 'audio/flac';
         case 'mp3':
-          return 'audio/mpeg';
+          return 'audio/mp3';
         case 'm4a':
           return 'audio/mp4';
         case 'opus':
