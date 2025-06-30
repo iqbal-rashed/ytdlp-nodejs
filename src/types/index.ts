@@ -508,7 +508,7 @@ type VideoQuality =
 
 type QualityOptions = {
   videoonly: VideoQuality;
-  audioonly: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
+  audioonly: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   audioandvideo: 'highest' | 'lowest';
   mergevideo: VideoQuality;
 };
