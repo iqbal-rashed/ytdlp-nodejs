@@ -11,7 +11,7 @@ export default defineConfig([
     shims: true,
   },
   {
-    entry: ['src/scripts/download.ts'],
+    entry: ['src/scripts/downloadYtdlp.ts', 'src/scripts/downloadFFmpeg.ts'],
     format: ['cjs'],
     splitting: false,
     clean: true,

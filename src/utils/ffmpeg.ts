@@ -103,7 +103,8 @@ export function findFFmpegBinary() {
     }
 
     return ffmpegPath;
-  } catch {
+  } catch (err) {
+    console.error(err);
     return undefined;
   }
 }

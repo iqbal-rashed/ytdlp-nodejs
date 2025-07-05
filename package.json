@@ -1,6 +1,6 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.3.2-beta",
+  "version": "2.3.3-beta",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -24,8 +24,10 @@
     "test": "jest",
     "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
-    "download": "node ./dist/download.js",
-    "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run download', { stdio: 'inherit' });\"",
+    "download:ytdlp": "tsx ./src/scripts/downloadYtdlp.ts",
+    "download:ffmpeg": "tsx ./src/scripts/downloadFFmepg.ts",
+    "postdownload": "node ./dist/downloadYtdlp.js",
+    "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run postdownload', { stdio: 'inherit' });\"",
     "prepare": "husky"
   },
   "keywords": [

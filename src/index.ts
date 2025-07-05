@@ -1,7 +1,6 @@
 import { spawn, spawnSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
 import { Blob } from 'buffer';
 import {
   ArgsOptions,
@@ -29,6 +28,7 @@ import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
 import { downloadFile } from './utils/request';
+import { findYtdlpBinary } from './utils/ytdlp';
 
 export const BIN_DIR = path.join(__dirname, '..', 'bin');
 
@@ -38,36 +38,17 @@ export class YtDlp {
 
   // done
   constructor(opt?: YtDlpOptions) {
-    this.binaryPath = opt?.binaryPath || this.getDefaultBinaryPath();
-    this.ffmpegPath = opt?.ffmpegPath;
+    const ytdlpBinary = opt?.binaryPath || findYtdlpBinary();
 
-    const ffmpegBinary = findFFmpegBinary();
+    if (!ytdlpBinary) throw new Error('yt-dlp binary not found');
+    fs.chmodSync(ytdlpBinary, 0o755);
 
-    if (ffmpegBinary) {
-      this.ffmpegPath = ffmpegBinary;
-    }
-
-    if (!fs.existsSync(this.binaryPath))
-      throw new Error('yt-dlp binary not found');
-    fs.chmodSync(this.binaryPath, 0o755);
+    this.binaryPath = ytdlpBinary;
+    this.ffmpegPath = opt?.ffmpegPath || findFFmpegBinary();
 
     if (this.ffmpegPath && !fs.existsSync(this.ffmpegPath)) {
       throw new Error('ffmpeg binary not found');
     }
-  }
-
-  // done
-  private getDefaultBinaryPath(): string {
-    const platform = os.platform();
-    let binaryName: string;
-    if (platform === 'win32') {
-      binaryName = 'yt-dlp.exe';
-    } else if (platform === 'darwin') {
-      binaryName = 'yt-dlp_macos';
-    } else {
-      binaryName = 'yt-dlp';
-    }
-    return path.join(BIN_DIR, binaryName);
   }
 
   // done

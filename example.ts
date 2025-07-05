@@ -23,6 +23,7 @@ async function getVideoFile() {
     console.error('Error:', error);
   }
 }
+
 async function downloadVideo() {
   try {
     const output = await ytdlp.downloadAsync(

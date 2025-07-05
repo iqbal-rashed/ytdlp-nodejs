@@ -38,7 +38,7 @@ function getYtdlpFilename(): string {
   return filename;
 }
 
-async function downloadYtDlp(): Promise<string> {
+export async function downloadYtDlp(): Promise<string> {
   const fileName = getYtdlpFilename();
   const downloadUrl: string = `${DOWNLOAD_BASE_URL}/${fileName}`;
 
@@ -69,7 +69,21 @@ async function downloadYtDlp(): Promise<string> {
   }
 }
 
-downloadYtDlp().catch((err) => {
-  console.error('Failed to download yt-dlp:', err);
-  process.exit(1);
-});
+export function findYtdlpBinary() {
+  const platform = process.platform as string;
+  const arch = process.arch as string;
+
+  try {
+    const binaryName: string = PLATFORM_MAPPINGS[platform][arch];
+
+    const ytdlpPath = path.join(BIN_DIR, binaryName);
+
+    if (!fs.existsSync(ytdlpPath)) {
+      throw new Error('Ytdlp binary not found. Please download it first.');
+    }
+    return ytdlpPath;
+  } catch (err) {
+    console.error(err);
+    return undefined;
+  }
+}
