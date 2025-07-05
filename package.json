@@ -24,7 +24,7 @@
     "test": "jest",
     "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
-    "download": "node ./dist/download.js",
+    "download": "node ./dist/scripts/download.js",
     "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run download', { stdio: 'inherit' });\"",
     "prepare": "husky"
   },
