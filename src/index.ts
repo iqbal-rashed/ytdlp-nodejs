@@ -28,7 +28,7 @@ import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { PassThrough } from 'stream';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
 import { downloadFile } from './utils/request';
-import { findYtdlpBinary } from './utils/ytdlp';
+import { downloadYtDlp, findYtdlpBinary } from './utils/ytdlp';
 
 export const BIN_DIR = path.join(__dirname, '..', 'bin');
 
@@ -38,16 +38,37 @@ export class YtDlp {
 
   // done
   constructor(opt?: YtDlpOptions) {
-    const ytdlpBinary = opt?.binaryPath || findYtdlpBinary();
-
-    if (!ytdlpBinary) throw new Error('yt-dlp binary not found');
-    fs.chmodSync(ytdlpBinary, 0o755);
-
-    this.binaryPath = ytdlpBinary;
+    this.binaryPath = opt?.binaryPath || findYtdlpBinary() || '';
     this.ffmpegPath = opt?.ffmpegPath || findFFmpegBinary();
 
+    if (!this.binaryPath || !fs.existsSync(this.binaryPath)) {
+      console.error(
+        new Error(
+          'yt-dlp binary not found. Please install yt-dlp or specify correct binaryPath in options.'
+        )
+      );
+    }
+
     if (this.ffmpegPath && !fs.existsSync(this.ffmpegPath)) {
-      throw new Error('ffmpeg binary not found');
+      console.error(
+        new Error(
+          `FFmpeg binary not found at: ${this.ffmpegPath}. Please install FFmpeg or specify correct ffmpegPath.`
+        )
+      );
+    }
+
+    if (process.platform !== 'win32') {
+      try {
+        fs.chmodSync(this.binaryPath, 0o755);
+      } catch (error) {
+        console.error(
+          new Error(
+            `Failed to set executable permissions: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`
+          )
+        );
+      }
     }
   }
 
@@ -162,6 +183,7 @@ export class YtDlp {
     passThrough?: PassThrough
   ): Promise<string> {
     return new Promise((resolve, reject) => {
+      if (!this.binaryPath) reject(new Error('Ytdlp binary not found'));
       const ytDlpProcess = spawn(this.binaryPath, args);
 
       let stdoutData = '';
@@ -394,6 +416,8 @@ export const helpers = {
   extractThumbnails,
   downloadFile,
   BIN_DIR,
+  downloadYtDlp,
+  findYtdlpBinary,
 };
 
 export type {

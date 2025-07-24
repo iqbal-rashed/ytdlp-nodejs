@@ -1,22 +1,19 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.3.3-beta",
+  "version": "2.3.3",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "ytdlp-nodejs": "./dist/cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./utils": {
-      "types": "./dist/utils.d.ts",
-      "import": "./dist/utils.mjs",
-      "require": "./dist/utils.js",
-      "default": "./dist/utils.js"
     }
   },
   "scripts": {

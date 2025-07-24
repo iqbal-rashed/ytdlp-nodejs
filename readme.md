@@ -12,7 +12,7 @@ To install the `yt-dlp` Node.js wrapper, run:
 npm i ytdlp-nodejs
 ```
 
-This package recommends installing FFmpeg. You can manually download it from [here](https://github.com/yt-dlp/FFmpeg-Builds#ffmpeg-static-auto-builds), or you can use the [downloadFFmpeg()](#downloadffmpeg-promisevoid) function to automate the process.
+This package recommends installing FFmpeg. You can manually download it from [here](https://github.com/yt-dlp/FFmpeg-Builds#ffmpeg-static-auto-builds), or you can use the [downloadFFmpeg()](#downloadffmpeg-promisevoid) function to automate the process. Also you can use cli to download.
 
 ## Usage
 

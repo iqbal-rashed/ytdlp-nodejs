@@ -38,7 +38,9 @@ function getBuildsArray(): string[] {
   return PLATFORM_MAPPINGS[platform][arch];
 }
 
-export async function downloadFFmpeg() {
+export async function downloadFFmpeg(out?: string) {
+  const OUT_DIR = out || BIN_DIR;
+
   const ffmpegBinary = findFFmpegBinary();
 
   if (ffmpegBinary) {
@@ -53,11 +55,11 @@ export async function downloadFFmpeg() {
     const downloadUrls = buildsArr.map((v) => `${DOWNLOAD_BASE_URL}/${v}`);
 
     const outputPaths = buildsArr.map((v) =>
-      path.join(BIN_DIR, String(v.split('-').pop()))
+      path.join(OUT_DIR, String(v.split('-').pop()))
     );
 
-    if (!fs.existsSync(BIN_DIR)) {
-      fs.mkdirSync(BIN_DIR, { recursive: true });
+    if (!fs.existsSync(OUT_DIR)) {
+      fs.mkdirSync(OUT_DIR, { recursive: true });
     }
 
     console.log('Downloading FFmpeg and FFprobe...');
@@ -103,8 +105,7 @@ export function findFFmpegBinary() {
     }
 
     return ffmpegPath;
-  } catch (err) {
-    console.error(err);
+  } catch {
     return undefined;
   }
 }
