@@ -15,6 +15,7 @@ const PLATFORM_MAPPINGS: Record<string, Record<string, string>> = {
     x64: 'yt-dlp',
     armv7l: 'yt-dlp_linux_armv7l',
     aarch64: 'yt-dlp_linux_aarch64',
+    arm64: 'yt-dlp',
   },
   darwin: {
     x64: 'yt-dlp_macos',
