@@ -16,6 +16,9 @@ import {
   VideoThumbnail,
   YtDlpOptions,
   InfoOptions,
+  QualityOptions,
+  TypeOptions,
+  VideoFormat,
 } from './types';
 import { createArgs } from './utils/args';
 import { extractThumbnails } from './utils/thumbnails';
@@ -428,4 +431,7 @@ export type {
   VideoThumbnail,
   YtDlpOptions,
   PlaylistInfo,
+  QualityOptions,
+  TypeOptions,
+  VideoFormat,
 };

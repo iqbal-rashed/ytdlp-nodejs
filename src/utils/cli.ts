@@ -1,4 +1,4 @@
-// #!/usr/bin/env node
+#!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
 import { BIN_DIR } from '..';

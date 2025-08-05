@@ -506,14 +506,14 @@ type VideoQuality =
   | 'highest'
   | 'lowest';
 
-type QualityOptions = {
+export type QualityOptions = {
   videoonly: VideoQuality;
   audioonly: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
   audioandvideo: 'highest' | 'lowest';
   mergevideo: VideoQuality;
 };
 
-type TypeOptions = {
+export type TypeOptions = {
   videoonly: 'mp4' | 'webm';
   audioandvideo: 'mp4' | 'webm';
   mergevideo: 'mkv' | 'mp4' | 'ogg' | 'webm' | 'flv';
