@@ -340,6 +340,7 @@ export interface ArgsOptions {
 export interface YtDlpOptions {
   binaryPath?: string;
   ffmpegPath?: string;
+  pythonPath?: string;
 }
 
 export interface VideoInfo {

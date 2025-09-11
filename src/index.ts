@@ -38,11 +38,13 @@ export const BIN_DIR = path.join(__dirname, '..', 'bin');
 export class YtDlp {
   private readonly binaryPath: string;
   private readonly ffmpegPath?: string;
+  private readonly pythonPath?: string;
 
   // done
   constructor(opt?: YtDlpOptions) {
     this.binaryPath = opt?.binaryPath || findYtdlpBinary() || '';
     this.ffmpegPath = opt?.ffmpegPath || findFFmpegBinary();
+    this.pythonPath = opt?.pythonPath;
 
     if (!this.binaryPath || !fs.existsSync(this.binaryPath)) {
       console.error(
@@ -158,7 +160,11 @@ export class YtDlp {
 
   // done
   private _execute(args: string[]) {
-    const ytDlpProcess = spawn(this.binaryPath, args);
+    const customEnv = { ...process.env };
+    if (this.pythonPath) {
+      customEnv.PATH = `${this.pythonPath}:${process.env.PATH}`;
+    }
+    const ytDlpProcess = spawn(this.binaryPath, args, { env: customEnv });
 
     ytDlpProcess.stderr.on('data', (chunk) => {
       const str = Buffer.from(chunk).toString();
@@ -187,7 +193,11 @@ export class YtDlp {
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       if (!this.binaryPath) reject(new Error('Ytdlp binary not found'));
-      const ytDlpProcess = spawn(this.binaryPath, args);
+      const customEnv = { ...process.env };
+      if (this.pythonPath) {
+        customEnv.PATH = `${this.pythonPath}:${process.env.PATH}`;
+      }
+      const ytDlpProcess = spawn(this.binaryPath, args, { env: customEnv });
 
       let stdoutData = '';
       let stderrData = '';
