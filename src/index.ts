@@ -93,7 +93,7 @@ export class YtDlp {
       binaryProcess.on('exit', (code) => {
         binaryExists = code === 0;
         if (options?.ffmpeg) {
-          const ffmpegProcess = spawn(this.ffmpegPath!, ['--version']);
+          const ffmpegProcess = spawn(this.ffmpegPath!, ['-version']);
           ffmpegProcess.on('error', () => (ffmpegExists = false));
           ffmpegProcess.on('exit', (code) => {
             ffmpegExists = code === 0;
@@ -124,7 +124,7 @@ export class YtDlp {
       stdio: 'ignore',
     });
     const ffmpegResult = options?.ffmpeg
-      ? spawnSync(this.ffmpegPath!, ['--version'], { stdio: 'ignore' })
+      ? spawnSync(this.ffmpegPath!, ['-version'], { stdio: 'ignore' })
       : { status: 0 };
     return binaryResult.status === 0 && ffmpegResult.status === 0;
   }
