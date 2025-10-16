@@ -66,8 +66,7 @@ export class YtDlp {
       } catch (error) {
         console.error(
           new Error(
-            `Failed to set executable permissions: ${
-              error instanceof Error ? error.message : 'Unknown error'
+            `Failed to set executable permissions: ${error instanceof Error ? error.message : 'Unknown error'
             }`
           )
         );
@@ -404,6 +403,16 @@ export class YtDlp {
     return new File([Buffer.concat(chunks)], defaultMetadata.name, {
       type: defaultMetadata.type,
     });
+  }
+
+  public async getUrlsAsync(url: string, options?: ArgsOptions): Promise<string[]> {
+    const args = [
+      '--print', 'urls',
+      ...createArgs({ flatPlaylist: true, ...options }),
+      url,
+    ];
+    const execResult = await this._executeAsync(args);
+    return String(execResult).split('\n')
   }
 }
 
