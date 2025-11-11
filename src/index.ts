@@ -241,6 +241,7 @@ export class YtDlp {
       args.push(...extra);
     }
 
+    if (!url) return args;
     return args.concat(url);
   }
 

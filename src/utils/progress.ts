@@ -1,7 +1,7 @@
 import { VideoProgress } from '../types';
 
 export const PROGRESS_STRING =
-  'bright-{"status":"%(progress.status)s","downloaded":"%(progress.downloaded_bytes)s","total":"%(progress.total_bytes)s","total_estimate":"%(progress.total_bytes_estimate)s","speed":"%(progress.speed)s","eta":"%(progress.eta)s"}';
+  '~ytdlp-progress-%(progress)#j';
 
 export function formatBytes(bytes: string | number, decimals = 2) {
   const newBytes = Number(bytes);
@@ -43,29 +43,31 @@ export function secondsToHms(d: number | string) {
 
 export function stringToProgress(str: string): VideoProgress | undefined {
   try {
-    if (!str.includes('bright')) throw new Error();
+    if (!str.includes('~ytdlp-progress-')) throw new Error();
 
-    const jsonStr = str.split('\r')?.[1]?.trim()?.split('-')?.[1];
+    const jsonStr = str.trim().replace('~ytdlp-progress-', '');
     if (!jsonStr) throw new Error();
 
     const object = JSON.parse(jsonStr);
 
-    const total = isNaN(Number(object.total))
-      ? Number(object.total_estimate)
-      : Number(object.total);
+    const total_bytes = Number(object.total_bytes);
+    const total = isNaN(total_bytes)
+      ? Number(object.total_bytes_estimate)
+      : total_bytes;
 
     return {
+      filename: object.filename,
       status: object.status,
-      downloaded: Number(object.downloaded),
-      downloaded_str: formatBytes(object.downloaded),
+      downloaded: Number(object.downloaded_bytes),
+      downloaded_str: formatBytes(object.downloaded_bytes),
       total: total,
       total_str: formatBytes(total),
       speed: Number(object.speed),
       speed_str: formatBytes(object.speed) + '/s',
       eta: Number(object.eta),
       eta_str: secondsToHms(object.eta),
-      percentage: percentage(object.downloaded, total),
-      percentage_str: percentage(object.downloaded, total) + '%',
+      percentage: percentage(object.downloaded_bytes, total),
+      percentage_str: percentage(object.downloaded_bytes, total) + '%',
     };
   } catch {
     return undefined;
