@@ -241,7 +241,7 @@ export class YtDlp {
       args.push(...extra);
     }
 
-    return args.concat(url);
+    return args.concat("--", url);
   }
 
   // done
@@ -327,6 +327,7 @@ export class YtDlp {
       '--dump-single-json',
       '--quiet',
       ...createArgs({ flatPlaylist: true, ...options }),
+      '--',
       url,
     ];
     const execResult = await this._executeAsync(args);
@@ -341,6 +342,7 @@ export class YtDlp {
       '--print',
       'playlist:thumbnails_table',
       '--quiet',
+      '--',
       url,
     ];
     const execResult = await this._executeAsync(args);
@@ -349,7 +351,7 @@ export class YtDlp {
 
   // done
   public async getTitleAsync(url: string): Promise<string> {
-    const args = ['--print', 'title', url];
+    const args = ['--print', 'title', '--', url];
     const execResult = await this._executeAsync(args);
     return execResult;
   }
@@ -409,6 +411,7 @@ export class YtDlp {
     const args = [
       '--print', 'urls',
       ...createArgs({ flatPlaylist: true, ...options }),
+      '--',
       url,
     ];
     const execResult = await this._executeAsync(args);

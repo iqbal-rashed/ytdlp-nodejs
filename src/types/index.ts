@@ -18,6 +18,8 @@ export interface ArgsOptions {
   configLocations?: string[];
   pluginDirs?: string[];
   noPluginDirs?: boolean;
+  jsRuntimes?: string;
+  noJsRuntimes?: boolean;
   flatPlaylist?: boolean;
   noFlatPlaylist?: boolean;
   liveFromStart?: boolean;
@@ -355,6 +357,8 @@ export interface VideoInfo {
   uploader_url: string;
   channel_id: string;
   channel_url: string;
+  creator: string;
+  creators: string[];
   duration: number;
   view_count: number;
 
@@ -597,4 +601,14 @@ export interface InfoOptions {
    * Disable cookies entirely (overrides other cookie options).
    */
   noCookies?: boolean;
+
+  /**
+   * JS runtimes to use.
+   */
+  jsRuntimes?: string;
+
+  /**
+   * Disable JS runtimes.
+   */
+  noJsRuntimes?: boolean;
 }

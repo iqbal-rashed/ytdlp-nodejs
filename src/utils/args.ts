@@ -34,6 +34,10 @@ export function createArgs(options: ArgsOptions): string[] {
     }
   }
   if (options.noPluginDirs) args.push('--no-plugin-dirs');
+
+  if (options.jsRuntimes) args.push('--js-runtimes', options.jsRuntimes);
+  if (options.noJsRuntimes) args.push('--no-js-runtimes');
+
   if (options.flatPlaylist) args.push('--flat-playlist');
 
   if (options.noFlatPlaylist) args.push('--no-flat-playlist');
