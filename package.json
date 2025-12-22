@@ -22,8 +22,8 @@
     "lint": "eslint",
     "format": "prettier --ignore-path .gitignore --write \"./src/**/*.+(js|ts|json)\"",
     "download:ytdlp": "tsx ./src/scripts/downloadYtdlp.ts",
-    "download:ffmpeg": "tsx ./src/scripts/downloadFFmepg.ts",
-    "postdownload": "node ./dist/downloadYtdlp.js",
+    "download:ffmpeg": "tsx ./src/scripts/downloadFFmpeg.ts",
+    "postdownload": "node ./dist/scripts/downloadYtdlp.js",
     "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run postdownload', { stdio: 'inherit' });\"",
     "prepare": "husky"
   },

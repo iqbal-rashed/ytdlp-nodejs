@@ -481,6 +481,7 @@ export interface VideoFormat {
 }
 
 export interface VideoProgress {
+  filename: string;
   status: 'downloading' | 'finished';
   downloaded: number;
   downloaded_str: string;
