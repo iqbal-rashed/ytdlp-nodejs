@@ -4,3 +4,4 @@ dist
 output
 .tsup
 src/bin
+doc_build

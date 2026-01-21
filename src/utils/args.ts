@@ -1,5 +1,10 @@
 import { ArgsOptions } from '../types';
 
+/**
+ * Converts ArgsOptions into a string array of command-line arguments for yt-dlp.
+ * @param options - yt-dlp options
+ * @returns Array of command-line arguments
+ */
 export function createArgs(options: ArgsOptions): string[] {
   const args: string[] = [];
 
@@ -56,6 +61,10 @@ export function createArgs(options: ArgsOptions): string[] {
     args.push('--alias', ...options.aliases);
   }
 
+  // JavaScript runtime for extractors (issue #62)
+  const jsRuntime = options.jsRuntime ?? 'node';
+  if (jsRuntime) args.push('--js-runtime', jsRuntime);
+
   // Network Options
   if (options.proxy) args.push('--proxy', options.proxy);
   if (options.socketTimeout)
@@ -106,7 +115,7 @@ export function createArgs(options: ArgsOptions): string[] {
   if (options.skipPlaylistAfterErrors)
     args.push(
       '--skip-playlist-after-errors',
-      options.skipPlaylistAfterErrors.toString()
+      options.skipPlaylistAfterErrors.toString(),
     );
 
   // Download Options
@@ -124,6 +133,11 @@ export function createArgs(options: ArgsOptions): string[] {
 
   if (options.retrySleep)
     args.push('--retry-sleep', options.retrySleep.toString());
+  if (options.retrySleepByType) {
+    for (const [type, expr] of Object.entries(options.retrySleepByType)) {
+      args.push('--retry-sleep', `${type}:${expr}`);
+    }
+  }
   if (options.skipUnavailableFragments)
     args.push('--skip-unavailable-fragments');
   if (options.abortOnUnavailableFragment)
@@ -235,6 +249,7 @@ export function createArgs(options: ArgsOptions): string[] {
   if (options.progressDelta)
     args.push('--progress-delta', options.progressDelta.toString());
   if (options.verbose) args.push('--verbose');
+  if (options.debugPrintCommandLine) args.push('--print-command-line');
   if (options.dumpPages) args.push('--dump-pages');
   if (options.writePages) args.push('--write-pages');
   if (options.printTraffic) args.push('--print-traffic');
@@ -246,7 +261,12 @@ export function createArgs(options: ArgsOptions): string[] {
   if (options.preferInsecure) args.push('--prefer-insecure');
   if (options.addHeaders) {
     for (const [key, value] of Object.entries(options.addHeaders)) {
-      args.push('--add-headers', `${key}:${value}`);
+      args.push('--add-header', `${key}:${value}`);
+    }
+  }
+  if (options.headers) {
+    for (const [key, value] of Object.entries(options.headers)) {
+      args.push('--add-header', `${key}:${value}`);
     }
   }
   if (options.bidiWorkaround) args.push('--bidi-workaround');
@@ -310,7 +330,7 @@ export function createArgs(options: ArgsOptions): string[] {
   if (options.clientCertificatePassword)
     args.push(
       '--client-certificate-password',
-      options.clientCertificatePassword
+      options.clientCertificatePassword,
     );
 
   // Post-Processing Options
@@ -367,6 +387,7 @@ export function createArgs(options: ArgsOptions): string[] {
 
   // Workarounds
 
+  if (options.referer) args.push('--referer', options.referer);
   if (options.userAgent) args.push('--user-agent', options.userAgent);
 
   // Authentication Options
@@ -405,7 +426,7 @@ export function createArgs(options: ArgsOptions): string[] {
 
   if (options.replaceInMetadata) {
     for (const [key, [search, replace]] of Object.entries(
-      options.replaceInMetadata
+      options.replaceInMetadata,
     )) {
       args.push('--replace-in-metadata', `${key} ${search} ${replace}`);
     }
@@ -452,6 +473,10 @@ export function createArgs(options: ArgsOptions): string[] {
   // Add any additional options
   if (options.additionalOptions && options.additionalOptions.length > 0) {
     args.push(...options.additionalOptions);
+  }
+
+  if (options.rawArgs && options.rawArgs.length > 0) {
+    args.push(...options.rawArgs);
   }
 
   return args;

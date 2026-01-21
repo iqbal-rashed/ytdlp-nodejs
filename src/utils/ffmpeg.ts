@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { downloadFile } from './request';
-import { BIN_DIR } from '..';
+import { BIN_DIR } from '../configs/paths';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-latest';

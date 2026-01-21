@@ -1,441 +1,344 @@
-> Important Note: Version 2 is finally here! 🎉 This is still in beta, so please feel free to submit feature requests. Found any bug? Please open an issue on our GitHub repository.
-
 # ytdlp-nodejs
 
-This Node.js module is a wrapper for [`yt-dlp`](https://github.com/yt-dlp/yt-dlp), a powerful video downloader, that allows you to download, stream, and fetch metadata for videos from various websites. The wrapper automatically downloads the `yt-dlp` binary and provides a simple interface for using its features directly within a Node.js environment.
+[![npm version](https://img.shields.io/npm/v/ytdlp-nodejs.svg)](https://www.npmjs.com/package/ytdlp-nodejs)
+[![License](https://img.shields.io/npm/l/ytdlp-nodejs.svg)](https://github.com/iqbal-rashed/ytdlp-nodejs/blob/main/LICENSE)
+[![Documentation](https://img.shields.io/badge/docs-online-blue)](https://iqbal-rashed.github.io/ytdlp-nodejs)
+
+A powerful Node.js wrapper for [yt-dlp](https://github.com/yt-dlp/yt-dlp) that provides a simple, type-safe interface for downloading, streaming, and fetching metadata from videos across thousands of websites.
+
+📚 **[View Full Documentation](https://iqbal-rashed.github.io/ytdlp-nodejs)**
+
+## Features
+
+- 🚀 **Easy to use** - Simple API with TypeScript support
+- 📥 **Download & Stream** - Download videos or stream them directly
+- 📊 **Progress tracking** - Real-time download progress callbacks
+- 🎵 **Audio extraction** - Extract audio in various formats (MP3, FLAC, etc.)
+- 📋 **Metadata fetching** - Get video info, formats, thumbnails, and more
+- 🔄 **Auto-updates** - Built-in yt-dlp binary management
+- 💻 **CLI included** - Interactive and non-interactive command-line interface
+- 🌐 **Node.js runtime** - Uses Node.js as the default JavaScript runtime for yt-dlp
 
 ## Installation
 
-To install the `yt-dlp` Node.js wrapper, run:
-
 ```bash
-npm i ytdlp-nodejs
+npm install ytdlp-nodejs
 ```
 
-This package recommends installing FFmpeg. You can manually download it from [here](https://github.com/yt-dlp/FFmpeg-Builds#ffmpeg-static-auto-builds), or you can use the [downloadFFmpeg()](#downloadffmpeg-promisevoid) function to automate the process. Also you can use cli to download.
+> **Note**: FFmpeg is recommended for full functionality. Install it manually or use the built-in `downloadFFmpeg()` method.
 
-## Usage
+## Quick Start
 
-### Importing the Package
-
-```javascript
+```typescript
 import { YtDlp } from 'ytdlp-nodejs';
 
 const ytdlp = new YtDlp();
-```
 
-### Downloading a Video
+// Download a video
+const result = await ytdlp.downloadAsync(
+  'https://youtube.com/watch?v=dQw4w9WgXcQ',
+  {
+    onProgress: (progress) => console.log(`${progress.percent}%`),
+  },
+);
 
-```javascript
-async function downloadVideo() {
-  try {
-    const output = await ytdlp.downloadAsync(
-      'https://www.youtube.com/watch?v=_AL4IwHuHlY',
-      {
-        onProgress: (progress) => {
-          console.log(progress);
-        },
-        // others args
-      }
-    );
-    console.log('Download completed:', output);
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
+// Get video info
+const info = await ytdlp.getInfoAsync(
+  'https://youtube.com/watch?v=dQw4w9WgXcQ',
+);
+console.log(info.title);
 
-downloadVideo();
-```
-
-### Streaming a Video
-
-```javascript
+// Stream to file
 import { createWriteStream } from 'fs';
-
-async function streamVideo() {
-  try {
-    const st = createWriteStream('video.mp4');
-
-    const ytdlpStream = ytdlp.stream(
-      'https://www.youtube.com/watch?v=_AL4IwHuHlY',
-      {
-        onProgress: (progress) => {
-          console.log(progress);
-        },
-        // others args
-      }
-    );
-
-    await ytdlpStream.pipeAsync(st);
-
-    console.log('Download completed');
-  } catch (error) {
-    console.error('Error:', error);
-  }
-}
-
-streamVideo();
+const stream = ytdlp.stream('https://youtube.com/watch?v=dQw4w9WgXcQ');
+await stream.pipeAsync(createWriteStream('video.mp4'));
 ```
 
-## Class: `YtDlp`
+## CLI Usage
 
-### `constructor(opt?)`
+### Interactive Mode
 
-The constructor initializes the `YtDlp` object.
+```bash
+ytdlp-nodejs
+```
 
-#### Parameters:
+### Commands
 
-- `opt` (optional): Options to configure the paths for `yt-dlp` and `ffmpeg`.
-  - `binaryPath`: Path to the `yt-dlp` binary (optional).
-  - `ffmpegPath`: Path to the `ffmpeg` binary (optional).
+```bash
+# Download video
+ytdlp-nodejs download <url> --format "bestvideo+bestaudio"
 
-#### Example:
+# Download audio only
+ytdlp-nodejs download <url> --audio-only --audio-format mp3
+
+# List available formats
+ytdlp-nodejs formats <url>
+
+# Get direct URLs
+ytdlp-nodejs urls <url>
+
+# Download subtitles
+ytdlp-nodejs subs <url> --sub-langs en,es --sub-format srt
+
+# Update yt-dlp
+ytdlp-nodejs update
+```
+
+## API Reference
+
+### Constructor
 
 ```typescript
-const ytDlp = new YtDlp({
-  binaryPath: 'path-to-yt-dlp',
-  ffmpegPath: 'path-to-ffmpeg',
+const ytdlp = new YtDlp({
+  binaryPath?: string,  // Path to yt-dlp binary
+  ffmpegPath?: string,  // Path to ffmpeg binary
 });
 ```
 
-### `checkInstallationAsync(options?): Promise<boolean>`
+### Download Methods
 
-Asynchronously checks if both `yt-dlp` and optionally `ffmpeg` binaries are installed and available.
+#### `downloadAsync(url, options?)`
 
-#### Parameters:
-
-- `options` (optional): An object to specify if `ffmpeg` should also be checked.
-  - `ffmpeg`: If set to `true`, it checks if `ffmpeg` is installed.
-
-#### Returns:
-
-- `Promise<boolean>`: Resolves to `true` if both `yt-dlp` and `ffmpeg` are installed (if required), otherwise `false`.
-
-#### Example:
+Downloads a video asynchronously.
 
 ```typescript
-const isInstalled = await ytDlp.checkInstallationAsync({ ffmpeg: true });
-```
-
-### `checkInstallation(options?): boolean`
-
-Synchronously checks if both `yt-dlp` and optionally `ffmpeg` binaries are installed and available.
-
-#### Parameters:
-
-- `options` (optional): An object to specify if `ffmpeg` should also be checked.
-  - `ffmpeg`: If set to `true`, it checks if `ffmpeg` is installed.
-
-#### Returns:
-
-- `boolean`: `true` if both `yt-dlp` and `ffmpeg` are installed (if required), otherwise `false`.
-
-#### Example:
-
-```typescript
-const isInstalled = ytDlp.checkInstallation({ ffmpeg: true });
-```
-
-### `execAsync(url, options?): Promise<string>`
-
-Asynchronously executes `yt-dlp` with the provided URL and options.
-
-#### Parameters:
-
-- `url`: The URL of the video to download or stream.
-- `options` (optional): Additional options to pass to `yt-dlp`:
-  - `onData`: A callback that is triggered when data is received from `yt-dlp`.
-  - `onProgress`: An callback function to track progess of downloading.
-
-#### Returns:
-
-- `Promise<string>`: Resolves to the output of the `yt-dlp` command.
-
-#### Example:
-
-```typescript
-const result = await ytDlp.execAsync(
-  'https://www.youtube.com/watch?v=exampleVideoID'
-);
-```
-
-### `exec(url, options?): ChildProcess `
-
-Synchronously executes `yt-dlp` with the provided URL and options.
-
-#### Parameters:
-
-- `url`: The URL of the video to download or stream.
-- `options` (optional): Additional options to pass to `yt-dlp`.
-
-#### Returns:
-
-- `ChildProcess`: The spawned child process running `yt-dlp`.
-  - `on('progress')`: An event to track progess of downloading.
-
-#### Example:
-
-```typescript
-const ytDlpProcess = ytDlp.exec(
-  'https://www.youtube.com/watch?v=exampleVideoID'
-);
-```
-
-### `download(url, options?): ChildProcess`
-
-Downloads a video from the given URL.
-
-#### Parameters:
-
-- `url`: The URL of the video to download.
-- `options` (optional): Additional options for downloading, such as video format.
-  - `format`: String | [Format Options](#format-options).
-
-#### Returns:
-
-- `ChildProcess`: The spawned child process running `yt-dlp`.
-  - `on('progress')`: An event to track progess of downloading.
-
-#### Example:
-
-```typescript
-ytDlp.download('https://www.youtube.com/watch?v=exampleVideoID', {
-  format: 'bestvideo+bestaudio',
+const result = await ytdlp.downloadAsync(url, {
+  format: 'bestvideo+bestaudio', // or use Format Options
+  output: './downloads/%(title)s.%(ext)s',
+  onProgress: (progress) => console.log(progress),
+  printPaths: true,
+  onPaths: (paths) => console.log('Saved to:', paths),
 });
 ```
 
-### `downloadAsync(url, options?): Promise<string>`
+#### `download(url, options?)`
 
-Asynchronously downloads a video from the given URL.
-
-#### Parameters:
-
-- `url`: The URL of the video to download.
-- `options` (optional): Additional options for downloading, such as video format and a progress callback.
-  - `format`: String | [Format Options](#format-options).
-  - `onProgress`: An callback function to track progess of downloading.
-  - `output`: String | Custom output path and filename template. Uses [yt-dlp output template syntax](https://github.com/yt-dlp/yt-dlp#output-template). For example: `"./downloads/%(title)s.%(ext)s"`.
-
-#### Returns:
-
-- `Promise<string>`: Resolves to the output of the `yt-dlp` command.
-
-#### Example:
+Downloads synchronously, returning a `ChildProcess` with progress events.
 
 ```typescript
-const result = await ytDlp.downloadAsync(
-  'https://www.youtube.com/watch?v=exampleVideoID',
-  {
-    format: 'bestvideo+bestaudio',
-  }
-);
+const process = ytdlp.download(url, { format: 'best' });
+process.on('progress', (p) => console.log(p));
+process.on('close', () => console.log('Done'));
 ```
 
-### `stream(url, options?): PipeResponse`
+#### `downloadAudio(url, format?, options?)`
 
-Streams a video from the given URL.
-
-#### Parameters:
-
-- `url`: The URL of the video to stream.
-- `options` (optional): Additional options for streaming, such as video format and a progress callback.
-  - `format`: String | [Format Options](#format-options).
-  - `onProgress`: An callback function to track progess of downloading.
-
-#### Returns:
-
-- `pipe`: A function that pipes the stream to a writable stream.
-- `pipeAsync`: A function that pipes the stream asynchronously to a writable stream.
-
-#### Example:
+Downloads audio only.
 
 ```typescript
-const ytdlpStream = ytDlp.stream(
-  'https://www.youtube.com/watch?v=exampleVideoID'
-);
-ytdlpStream.pipe(destinationStream);
+await ytdlp.downloadAudio(url, 'mp3'); // 'aac', 'flac', 'mp3', 'm4a', 'opus', 'vorbis', 'wav', 'alac'
 ```
 
-### `getInfoAsync(url, options?): Promise<VideoInfo | PlaylistInfo>`
+#### `downloadVideo(url, quality?, options?)`
 
-Fetches detailed information about a video asynchronously.
-
-#### Parameters:
-
-- `url`: The URL of the video.
-- `options` (optional): InfoOptions
-  Additional options to control the fetching behavior:
-
-  - `flatPlaylist`?: `boolean` (default: `true`) |
-    If `true`, returns a flat list with limited information for playlist items.
-    If `false`, fetches full information for each video in the playlist.
-
-  - `cookies`?: `string` |
-    A raw cookie header string to be used for authenticated requests.
-
-  - `cookiesFromBrowser`?: `string` |
-    Uses cookies retrieved from the specified browser profile.
-
-  - `noCookiesFromBrowser`?: `boolean` |
-    If true, disables automatically retrieving cookies from the browser.
-
-  - `noCookies`?: `boolean` |
-    If true, disables the use of all cookies entirely (overrides other cookie options).
-
-#### Returns:
-
-- `Promise<VideoInfo | PlaylistInfo>`: Resolves to a `VideoInfo` or `PlaylistInfo` object containing metadata about the video.
-
-#### Example:
+Downloads video with specific quality.
 
 ```typescript
-const info = await ytDlp.getInfoAsync('url');
-if (info._type == 'video') {
-  console.log(info); // VideoInfo
-}
-if (info._type == 'playlist') {
-  console.log(info); // PlaylistInfo
-}
+await ytdlp.downloadVideo(url, '1080p'); // 'best', '2160p', '1440p', '1080p', '720p', etc.
 ```
 
-### `getThumbnailsAsync(url): Promise<VideoThumbnail[]>`
+### Streaming
 
-Fetches all available thumbnails for a video asynchronously.
+#### `stream(url, options?)`
 
-#### Parameters:
-
-- `url`: The URL of the video.
-
-#### Returns:
-
-- `Promise<VideoThumbnail[]>`: Resolves to an array of `VideoThumbnail` objects.
-
-#### Example:
+Returns a stream for piping.
 
 ```typescript
-const thumbnails = await ytDlp.getThumbnailsAsync(
-  'https://www.youtube.com/watch?v=exampleVideoID'
-);
+const ytdlpStream = ytdlp.stream(url, {
+  format: { filter: 'audioandvideo', type: 'mp4', quality: 'highest' },
+  onProgress: (p) => console.log(p),
+});
+
+// Sync pipe
+ytdlpStream.pipe(writableStream);
+
+// Async pipe
+await ytdlpStream.pipeAsync(writableStream);
 ```
 
-### `getTitleAsync(url): Promise<string>`
+#### `getFileAsync(url, options?)`
 
-Fetche title for a video asynchronously.
-
-#### Parameters:
-
-- `url`: The URL of the video.
-
-#### Returns:
-
-- `Promise<string>`: Resolves to a string.
-
-#### Example:
+Returns a `File` object without saving to disk.
 
 ```typescript
-const title = await ytDlp.getTitleAsync(
-  'https://www.youtube.com/watch?v=exampleVideoID'
-);
+const file = await ytdlp.getFileAsync(url, {
+  format: { filter: 'audioonly', type: 'mp3' },
+  onProgress: (p) => console.log(p),
+});
+console.log(file.name, file.size);
 ```
 
-### `getFileAsync(url, options?): Promise<File>`
+### Information Methods
 
-Returns a `File` object containing the video/audio data without saving it to disk.
+#### `getInfoAsync(url, options?)`
 
-#### Parameters:
-
-- `url`: The URL of the video.
-- `options` (optional): Additional options for getting the file:
-  - `format`: String | [Format Options](#format-options)
-  - `filename`: Custom filename for the resulting file
-  - `metadata`: Custom metadata for the file:
-    - `name`: File name
-    - `type`: MIME type
-    - `size`: File size in bytes
-  - `onProgress`: A callback function to track progress of downloading
-
-#### Returns:
-
-- `Promise<File>`: Resolves to a `File` object containing the video/audio data.
-
-#### Example:
+Fetches video/playlist metadata.
 
 ```typescript
-const file = await ytdlp.getFileAsync(
-  'https://www.youtube.com/watch?v=exampleVideoID',
-  {
-    format: {
-      filter: 'audioandvideo',
-      type: 'mp4',
-      quality: 'highest',
-    },
-    filename: 'custom-video.mp4',
-    onProgress: (progress) => {
-      console.log(progress);
-    },
-  }
-);
+const info = await ytdlp.getInfoAsync(url);
+console.log(info.title, info.duration, info.formats);
 ```
 
-### `downloadFFmpeg(): Promise<void>`
+#### `getFormatsAsync(url, options?)`
 
-Downloads `ffmpeg` using a predefined method.
-
-#### Returns:
-
-- `Promise<void>`: Resolves once the download is complete.
-
-#### Example:
+Gets available formats using JSON output.
 
 ```typescript
-await ytDlp.downloadFFmpeg();
+const result = await ytdlp.getFormatsAsync(url);
+console.log(`Found ${result.formats.length} formats`);
 ```
 
-# Format Options
+#### `getDirectUrlsAsync(url, options?)`
 
-`filter:` "videoonly" | "audioonly" | "audioandvideo" | "mergevideo"
+Returns direct media URLs.
 
-- `filter: "videoonly"`
+```typescript
+const urls = await ytdlp.getDirectUrlsAsync(url);
+```
 
-  - `quality:` "2160p" |
-    "1440p" |
-    "1080p" |
-    "720p" |
-    "480p" |
-    "360p" |
-    "240p" |
-    "144p" |
-    "highest" |
-    "lowest" (default: 'highest')
-  - `type:` "mp4" | "webm" (default:'mp4')
+#### `getTitleAsync(url)`
 
-- `filter: "audioonly"`
+```typescript
+const title = await ytdlp.getTitleAsync(url);
+```
 
-  - `quality:` "highest" | "lowest" (default:'highest')
+#### `getThumbnailsAsync(url)`
 
-- `filter: "audioandvideo"`
+```typescript
+const thumbnails = await ytdlp.getThumbnailsAsync(url);
+```
 
-  - `quality:` "highest" | "lowest" (default:'highest')
-  - `type:` "mp4" | "webm" (default:'mp4')
+#### `getVersionAsync()`
 
-- `filter: "audioonly"`
+```typescript
+const version = await ytdlp.getVersionAsync();
+```
 
-  - `quality:` 0 to 10 (default:5)
-  - `type:` "aac" | "flac" | "mp3" | "m4a" | "opus" | "vorbis" | "wav" | "alac" (default:'mp3')
+### Utility Methods
 
-- `filter: "mergevideo"`
-  - `quality:` "2160p" |
-    "1440p" |
-    "1080p" |
-    "720p" |
-    "480p" |
-    "360p" |
-    "240p" |
-    "144p" |
-    "highest" |
-    "lowest" (default: 'highest')
-  - `format:` "mkv" | "mp4" | "ogg" | "webm" | "flv" (default:'mp4')
+#### `checkInstallationAsync(options?)`
+
+```typescript
+const installed = await ytdlp.checkInstallationAsync({ ffmpeg: true });
+```
+
+#### `downloadFFmpeg()`
+
+```typescript
+await ytdlp.downloadFFmpeg();
+```
+
+#### `updateYtDlpAsync(options?)`
+
+```typescript
+const result = await ytdlp.updateYtDlpAsync();
+console.log(`Updated to ${result.version}`);
+```
+
+## Format Options
+
+Use structured format options for type-safe configuration:
+
+```typescript
+// Video only
+{ filter: 'videoonly', type: 'mp4', quality: '1080p' }
+
+// Audio only
+{ filter: 'audioonly', type: 'mp3', quality: 5 }
+
+// Audio and video (single file)
+{ filter: 'audioandvideo', type: 'mp4', quality: 'highest' }
+
+// Merge video and audio
+{ filter: 'mergevideo', type: 'mp4', quality: '1080p' }
+```
+
+### Quality Options
+
+| Filter                    | Quality Values                                                                                             |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `videoonly`, `mergevideo` | `'2160p'`, `'1440p'`, `'1080p'`, `'720p'`, `'480p'`, `'360p'`, `'240p'`, `'144p'`, `'highest'`, `'lowest'` |
+| `audioandvideo`           | `'highest'`, `'lowest'`                                                                                    |
+| `audioonly`               | `0` to `10` (VBR quality)                                                                                  |
+
+### Type Options
+
+| Filter                       | Type Values                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `videoonly`, `audioandvideo` | `'mp4'`, `'webm'`                                                            |
+| `audioonly`                  | `'aac'`, `'flac'`, `'mp3'`, `'m4a'`, `'opus'`, `'vorbis'`, `'wav'`, `'alac'` |
+| `mergevideo`                 | `'mkv'`, `'mp4'`, `'ogg'`, `'webm'`, `'flv'`                                 |
+
+## Advanced Options
+
+### JavaScript Runtime
+
+Node.js is used as the default JavaScript runtime for yt-dlp extractors:
+
+```typescript
+await ytdlp.execAsync(url, {
+  jsRuntime: 'node', // default, or 'deno', 'phantomjs'
+});
+```
+
+### Raw Arguments
+
+Pass any yt-dlp argument directly:
+
+```typescript
+await ytdlp.downloadAsync(url, {
+  rawArgs: ['--match-filter', 'duration > 60', '--geo-bypass'],
+});
+```
+
+### Debug Mode
+
+```typescript
+await ytdlp.execAsync(url, {
+  debugPrintCommandLine: true,
+  verbose: true,
+});
+```
+
+## Configuration
+
+CLI settings are stored in an OS-specific config file:
+
+| OS      | Path                                                     |
+| ------- | -------------------------------------------------------- |
+| macOS   | `~/Library/Application Support/ytdlp-nodejs/config.json` |
+| Linux   | `~/.config/ytdlp-nodejs/config.json`                     |
+| Windows | `%APPDATA%\ytdlp-nodejs\config.json`                     |
+
+Set `YTDLP_NODEJS_CONFIG_DIR` environment variable to override.
+
+## Troubleshooting
+
+### Binary not found
+
+```typescript
+import { helpers } from 'ytdlp-nodejs';
+await helpers.downloadYtDlp();
+await helpers.downloadFFmpeg();
+```
+
+Or provide custom paths:
+
+```typescript
+const ytdlp = new YtDlp({
+  binaryPath: '/path/to/yt-dlp',
+  ffmpegPath: '/path/to/ffmpeg',
+});
+```
+
+## Built With ytdlp-nodejs
+
+🚀 **[NextDownloader.com](https://nextdownloader.com/)** - A video downloader I built using this library. Check it out and let me know what you think! Your feedback is greatly appreciated.
 
 ## Contributing
 
-Contributions are welcome! Feel free to submit a pull request or open an issue on GitHub.
+Contributions are welcome! Please feel free to submit a Pull Request or open an issue on [GitHub](https://github.com/iqbal-rashed/ytdlp-nodejs).
+
+## License
+
+MIT

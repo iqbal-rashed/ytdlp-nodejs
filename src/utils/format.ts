@@ -14,7 +14,7 @@ const ByQuality = {
 };
 
 export function parseFormatOptions<T extends FormatKeyWord>(
-  format?: FormatOptions<T>['format'] | string
+  format?: FormatOptions<T>['format'] | string,
 ) {
   if (!format) {
     return [];
@@ -75,7 +75,7 @@ export function parseFormatOptions<T extends FormatKeyWord>(
 }
 
 export function getContentType(
-  format?: FormatOptions<FormatKeyWord>['format']
+  format?: FormatOptions<FormatKeyWord>['format'],
 ): string {
   if (!format || typeof format === 'string') {
     return 'video/mp4';
@@ -135,7 +135,7 @@ export function getContentType(
 }
 
 export function getFileExtension(
-  format?: FormatOptions<FormatKeyWord>['format']
+  format?: FormatOptions<FormatKeyWord>['format'],
 ): string {
   if (!format || typeof format === 'string') {
     return 'mp4';
@@ -148,4 +148,52 @@ export function getFileExtension(
   }
 
   return filter === 'audioonly' ? 'mp3' : 'mp4';
+}
+
+/**
+ * Gets the content type when extractAudio option is used (legacy args style).
+ * Fixes issue #43 where getFileAsync returns video MIME type for audio extraction.
+ */
+export function getContentTypeFromArgs(options?: {
+  extractAudio?: boolean;
+  audioFormat?: string;
+}): string | null {
+  if (!options?.extractAudio) {
+    return null; // Not extracting audio, use default behavior
+  }
+
+  const audioFormat = options.audioFormat || 'mp3';
+  switch (audioFormat) {
+    case 'aac':
+      return 'audio/aac';
+    case 'flac':
+      return 'audio/flac';
+    case 'mp3':
+      return 'audio/mpeg';
+    case 'm4a':
+      return 'audio/mp4';
+    case 'opus':
+      return 'audio/opus';
+    case 'vorbis':
+      return 'audio/vorbis';
+    case 'wav':
+      return 'audio/wav';
+    case 'alac':
+      return 'audio/mp4';
+    default:
+      return 'audio/mpeg';
+  }
+}
+
+/**
+ * Gets the file extension when extractAudio option is used.
+ */
+export function getFileExtensionFromArgs(options?: {
+  extractAudio?: boolean;
+  audioFormat?: string;
+}): string | null {
+  if (!options?.extractAudio) {
+    return null;
+  }
+  return options.audioFormat || 'mp3';
 }

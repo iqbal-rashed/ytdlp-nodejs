@@ -1,12 +1,12 @@
 {
   "name": "ytdlp-nodejs",
-  "version": "2.3.5",
+  "version": "3.3.6",
   "description": "A TypeScript wrapper for the yt-dlp executable",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "bin": {
-    "ytdlp-nodejs": "./dist/cli.js"
+    "ytdlp-nodejs": "./dist/cli/index.js"
   },
   "exports": {
     ".": {
@@ -25,7 +25,10 @@
     "download:ffmpeg": "tsx ./src/scripts/downloadFFmpeg.ts",
     "postdownload": "node ./dist/scripts/downloadYtdlp.js",
     "postinstall": "node -e \"process.env.INIT_CWD !== process.cwd() && require('child_process').execSync('npm run postdownload', { stdio: 'inherit' });\"",
-    "prepare": "husky"
+    "prepare": "husky",
+    "docs:dev": "rspress dev",
+    "docs:build": "rspress build",
+    "docs:preview": "rspress preview"
   },
   "keywords": [
     "yt-dlp",
@@ -55,12 +58,14 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
+    "@rspress/plugin-shiki": "^1.47.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",
     "eslint": "^9.23.0",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
     "jest": "^29.7.0",
+    "rspress": "^1.47.0",
     "ts-jest": "^29.2.6",
     "tsup": "^8.4.0",
     "tsx": "^4.19.3",

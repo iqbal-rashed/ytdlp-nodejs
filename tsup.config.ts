@@ -17,13 +17,18 @@ export default defineConfig([
     clean: true,
     minify: true,
     shims: true,
+    outDir: 'dist/scripts',
   },
   {
-    entry: ['src/utils/cli.ts'],
+    entry: ['src/cli/index.ts'],
     format: ['cjs'],
     splitting: false,
     clean: true,
     minify: true,
     shims: true,
+    outDir: 'dist/cli',
+    banner: {
+      js: '#!/usr/bin/env node',
+    },
   },
 ]);

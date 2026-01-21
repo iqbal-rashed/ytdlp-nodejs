@@ -1,9 +1,27 @@
+/**
+ * Progress Utilities
+ * Provides functions for parsing and formatting yt-dlp progress output.
+ * @module utils/progress
+ */
+
 import { VideoProgress } from '../types';
 
-export const PROGRESS_STRING =
-  '~ytdlp-progress-%(progress)#j';
+/**
+ * Template string for yt-dlp progress output format.
+ * Used with `--progress-template` flag.
+ */
+export const PROGRESS_STRING = '~ytdlp-progress-%(progress)#j';
 
-export function formatBytes(bytes: string | number, decimals = 2) {
+/**
+ * Formats a number of bytes into a human-readable string.
+ * @param bytes - Number of bytes (string or number)
+ * @param decimals - Number of decimal places (default: 2)
+ * @returns Formatted string like "1.5 MB"
+ * @example
+ * formatBytes(1536) // "1.5 KB"
+ * formatBytes(1048576) // "1 MB"
+ */
+export function formatBytes(bytes: string | number, decimals = 2): string {
   const newBytes = Number(bytes);
 
   if (newBytes === 0 || isNaN(newBytes)) return newBytes + ' Bytes';
@@ -17,19 +35,36 @@ export function formatBytes(bytes: string | number, decimals = 2) {
   return parseFloat((newBytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-function toFixedNumber(num: number, digits: number, base?: number) {
+/**
+ * Rounds a number to a fixed number of decimal places.
+ * @internal
+ */
+function toFixedNumber(num: number, digits: number, base?: number): number {
   const pow = Math.pow(base || 10, digits);
   return Math.round(num * pow) / pow;
 }
 
+/**
+ * Calculates percentage of partial value relative to total.
+ * @param partialValue - Current progress value
+ * @param totalValue - Total value
+ * @returns Percentage as a number (e.g., 75.5)
+ */
 export function percentage(
   partialValue: string | number,
-  totalValue: string | number
-) {
+  totalValue: string | number,
+): number {
   return toFixedNumber((100 * Number(partialValue)) / Number(totalValue), 2);
 }
 
-export function secondsToHms(d: number | string) {
+/**
+ * Converts seconds to a human-readable time string.
+ * @param d - Duration in seconds
+ * @returns Formatted string like "1 hour, 30 minutes, 45 seconds"
+ * @example
+ * secondsToHms(3661) // "1 hour, 1 minute, 1 second"
+ */
+export function secondsToHms(d: number | string): string {
   d = Number(d);
   const h = Math.floor(d / 3600);
   const m = Math.floor((d % 3600) / 60);
@@ -41,6 +76,16 @@ export function secondsToHms(d: number | string) {
   return hDisplay + mDisplay + sDisplay;
 }
 
+/**
+ * Parses a yt-dlp progress template string into a structured VideoProgress object.
+ * @param str - Raw progress output string from yt-dlp
+ * @returns Parsed VideoProgress object, or undefined if parsing fails
+ * @example
+ * const progress = stringToProgress('~ytdlp-progress-{"status":"downloading",...}');
+ * if (progress) {
+ *   console.log(`${progress.percentage_str} complete`);
+ * }
+ */
 export function stringToProgress(str: string): VideoProgress | undefined {
   try {
     if (!str.includes('~ytdlp-progress-')) throw new Error();
