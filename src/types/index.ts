@@ -324,17 +324,161 @@ export type UpdateResult = {
 };
 
 /**
+ * Video information returned after download (post-processing complete).
+ */
+export interface DownloadedVideoInfo {
+  /** Video identifier */
+  id: string;
+  /** Video title */
+  title: string;
+  /** Video title ignoring live timestamp and generic title */
+  fulltitle?: string;
+  /** Video filename extension */
+  ext?: string;
+  /** A secondary title of the video */
+  alt_title?: string;
+  /** The description of the video */
+  description?: string;
+  /** An alternative identifier for the video */
+  display_id?: string;
+  /** Full name of the video uploader */
+  uploader?: string;
+  /** Nickname or id of the video uploader */
+  uploader_id?: string;
+  /** URL to the video uploader's profile */
+  uploader_url?: string;
+  /** License name the video is licensed under */
+  license?: string;
+  /** The creators of the video */
+  creators?: string[];
+  /** The creators of the video; comma-separated */
+  creator?: string;
+  /** UNIX timestamp of the moment the video became available */
+  timestamp?: number;
+  /** Video upload date in UTC (YYYYMMDD) */
+  upload_date?: string;
+  /** UNIX timestamp of the moment the video was released */
+  release_timestamp?: number;
+  /** The date (YYYYMMDD) when the video was released in UTC */
+  release_date?: string;
+  /** Year (YYYY) when the video or album was released */
+  release_year?: number;
+  /** UNIX timestamp of the moment the video was last modified */
+  modified_timestamp?: number;
+  /** The date (YYYYMMDD) when the video was last modified in UTC */
+  modified_date?: string;
+  /** Full name of the channel the video is uploaded on */
+  channel?: string;
+  /** Id of the channel */
+  channel_id?: string;
+  /** URL of the channel */
+  channel_url?: string;
+  /** Number of followers of the channel */
+  channel_follower_count?: number;
+  /** Whether the channel is verified on the platform */
+  channel_is_verified?: boolean;
+  /** Physical location where the video was filmed */
+  location?: string;
+  /** Length of the video in seconds */
+  duration?: number;
+  /** Length of the video (HH:mm:ss) */
+  duration_string?: string;
+  /** How many users have watched the video on the platform */
+  view_count?: number;
+  /** How many users are currently watching the video */
+  concurrent_view_count?: number;
+  /** Number of positive ratings of the video */
+  like_count?: number;
+  /** Number of negative ratings of the video */
+  dislike_count?: number;
+  /** Number of reposts of the video */
+  repost_count?: number;
+  /** Average rating given by users */
+  average_rating?: number;
+  /** Number of comments on the video */
+  comment_count?: number;
+  /** Number of times the video has been saved or bookmarked */
+  save_count?: number;
+  /** Age restriction for the video (years) */
+  age_limit?: number;
+  /** One of "not_live", "is_live", "is_upcoming", "was_live", "post_live" */
+  live_status?: string;
+  /** Whether this video is a live stream or a fixed-length video */
+  is_live?: boolean;
+  /** Whether this video was originally a live stream */
+  was_live?: boolean;
+  /** Whether the video is allowed to play in embedded players */
+  playable_in_embed?: string;
+  /** Whether the video is "private", "premium_only", "subscriber_only", "needs_auth", "unlisted" or "public" */
+  availability?: string;
+  /** The type of media as classified by the site */
+  media_type?: string;
+  /** Time in seconds where the reproduction should start */
+  start_time?: number;
+  /** Time in seconds where the reproduction should end */
+  end_time?: number;
+  /** Name of the extractor */
+  extractor?: string;
+  /** Key name of the extractor */
+  extractor_key?: string;
+  /** Unix epoch of when the information extraction was completed */
+  epoch?: number;
+  /** Number that will be increased with each download */
+  autonumber?: number;
+  /** Number that will be increased with each video */
+  video_autonumber?: number;
+  /** Total number of extracted items in the playlist */
+  n_entries?: number;
+  /** Identifier of the playlist that contains the video */
+  playlist_id?: string;
+  /** Name of the playlist that contains the video */
+  playlist_title?: string;
+  /** playlist_title if available or else playlist_id */
+  playlist?: string;
+  /** Total number of items in the playlist */
+  playlist_count?: number;
+  /** Index of the video in the playlist */
+  playlist_index?: string;
+  /** Position of the video in the playlist download queue */
+  playlist_autonumber?: number;
+  /** Full name of the playlist uploader */
+  playlist_uploader?: string;
+  /** Nickname or id of the playlist uploader */
+  playlist_uploader_id?: string;
+  /** Display name of the channel that uploaded the playlist */
+  playlist_channel?: string;
+  /** Identifier of the channel that uploaded the playlist */
+  playlist_channel_id?: string;
+  /** URL of the playlist webpage */
+  playlist_webpage_url?: string;
+  /** A URL to the video webpage */
+  webpage_url?: string;
+  /** The basename of the webpage URL */
+  webpage_url_basename?: string;
+  /** The domain of the webpage URL */
+  webpage_url_domain?: string;
+  /** The URL given by the user */
+  original_url?: string;
+  /** List of categories the video belongs to */
+  categories?: string[];
+  /** List of tags assigned to the video */
+  tags?: string[];
+  /** List of cast members */
+  cast?: string[];
+  /** Final filepath after post-processing */
+  filepath?: string;
+}
+
+/**
  * Result returned by downloadAsync.
  */
 export interface DownloadResult {
   /** Raw command output */
   output: string;
-  /** Downloaded video/audio file paths */
-  filePaths: string[];
-  /** Downloaded thumbnail paths (when writeThumbnail is true) */
-  thumbnailPaths: string[];
-  /** Downloaded subtitle paths (when writeSubs is true) */
-  subtitlePaths: string[];
+  /** Downloaded video/audio file path */
+  filePath: string;
+  /** Video information after download (including post-processing) */
+  info?: DownloadedVideoInfo;
 }
 
 /**

@@ -10,7 +10,11 @@ import { parseFormatOptions } from '../utils/format';
 import { stringToProgress } from '../utils/progress';
 import { runYtDlp, spawnYtDlp } from '../core/runner';
 import { buildYtDlpArgs } from '../core/args';
-import { parsePrintedPaths } from '../core/parsers/paths';
+import {
+  parsePrintedOutput,
+  parsePrintedVideoInfo,
+} from '../core/parsers/paths';
+import type { DownloadedVideoInfo } from '../types';
 
 /** Internal context for download operations. */
 export interface DownloadContext {
@@ -27,38 +31,6 @@ export interface BuildDownloadArgsOptions {
   extra?: string[];
 }
 
-/** Thumbnail file extensions */
-const THUMBNAIL_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-
-/** Subtitle file extensions */
-const SUBTITLE_EXTENSIONS = ['.vtt', '.srt', '.ass', '.ssa', '.sub', '.lrc'];
-
-/**
- * Categorizes paths by file type.
- */
-function categorizePaths(paths: string[]): {
-  filePaths: string[];
-  thumbnailPaths: string[];
-  subtitlePaths: string[];
-} {
-  const filePaths: string[] = [];
-  const thumbnailPaths: string[] = [];
-  const subtitlePaths: string[] = [];
-
-  for (const path of paths) {
-    const lowerPath = path.toLowerCase();
-    if (THUMBNAIL_EXTENSIONS.some((ext) => lowerPath.endsWith(ext))) {
-      thumbnailPaths.push(path);
-    } else if (SUBTITLE_EXTENSIONS.some((ext) => lowerPath.endsWith(ext))) {
-      subtitlePaths.push(path);
-    } else {
-      filePaths.push(path);
-    }
-  }
-
-  return { filePaths, thumbnailPaths, subtitlePaths };
-}
-
 /**
  * Builds yt-dlp arguments for download operations.
  */
@@ -73,52 +45,98 @@ export function buildDownloadArgs(opts: BuildDownloadArgsOptions): string[] {
 }
 
 /**
+ * Video info fields to collect after download (post-processing complete).
+ */
+const VIDEO_INFO_FIELDS = [
+  'id',
+  'title',
+  'fulltitle',
+  'ext',
+  'alt_title',
+  'description',
+  'display_id',
+  'uploader',
+  'uploader_id',
+  'uploader_url',
+  'license',
+  'creators',
+  'creator',
+  'timestamp',
+  'upload_date',
+  'release_timestamp',
+  'release_date',
+  'release_year',
+  'modified_timestamp',
+  'modified_date',
+  'channel',
+  'channel_id',
+  'channel_url',
+  'channel_follower_count',
+  'channel_is_verified',
+  'location',
+  'duration',
+  'duration_string',
+  'view_count',
+  'concurrent_view_count',
+  'like_count',
+  'dislike_count',
+  'repost_count',
+  'average_rating',
+  'comment_count',
+  'save_count',
+  'age_limit',
+  'live_status',
+  'is_live',
+  'was_live',
+  'playable_in_embed',
+  'availability',
+  'media_type',
+  'start_time',
+  'end_time',
+  'extractor',
+  'extractor_key',
+  'epoch',
+  'autonumber',
+  'video_autonumber',
+  'n_entries',
+  'playlist_id',
+  'playlist_title',
+  'playlist',
+  'playlist_count',
+  'playlist_index',
+  'playlist_autonumber',
+  'playlist_uploader',
+  'playlist_uploader_id',
+  'playlist_channel',
+  'playlist_channel_id',
+  'playlist_webpage_url',
+  'webpage_url',
+  'webpage_url_basename',
+  'webpage_url_domain',
+  'original_url',
+  'categories',
+  'tags',
+  'cast',
+  'filepath',
+];
+
+/**
  * Builds extra download arguments for format options.
- * Always includes path printing for result collection.
+ * Always includes path printing and video info for result collection.
  */
 export function buildDownloadExtraArgs<F extends FormatKeyWord>(
   format: FormatOptions<F>['format'],
 ): string[] {
   const extra = parseFormatOptions(format);
-  // Always collect paths for DownloadResult
-  extra.push('--print', 'after_move:filepath');
+
+  // Build JSON formatted print string with all video info fields
+  const jsonFields = VIDEO_INFO_FIELDS.map(
+    (field) => `"${field}":"%(${field})j"`,
+  ).join(',');
+  extra.push('--print', `after_move:__YTDLP_VIDEO_INFO__:{${jsonFields}}`);
+
+  extra.push('--progress', '--newline');
   return extra;
-}
-
-/**
- * Attaches path collection listener to child process.
- * Emits 'paths' event with categorized paths.
- */
-export function attachPathsListener(
-  child: ChildProcess,
-  onPaths?: (paths: string[]) => void,
-): void {
-  if (!child.stdout) return;
-  const paths: string[] = [];
-  let buffer = '';
-
-  child.stdout.on('data', (data) => {
-    buffer += data.toString();
-    const lines = buffer.split(/\r?\n/);
-    buffer = lines.pop() || '';
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.includes('~ytdlp-progress-')) continue;
-      paths.push(trimmed);
-    }
-  });
-
-  child.on('close', () => {
-    const trimmed = buffer.trim();
-    if (trimmed && !trimmed.includes('~ytdlp-progress-')) {
-      paths.push(trimmed);
-    }
-    if (paths.length > 0) {
-      const categorized = categorizePaths(paths);
-      child.emit('paths', categorized);
-    }
-    onPaths?.(paths);
-  });
 }
 
 /**
@@ -158,8 +176,11 @@ export async function downloadInternal<F extends FormatKeyWord>(
   ctx: DownloadContext,
   url: string,
   options?: FormatOptions<F>,
-): Promise<{ output: string; paths: string[] }> {
-  const { format, onProgress, onPaths, ...opt } = options || {};
+): Promise<{
+  output: string;
+  info: DownloadedVideoInfo | null;
+}> {
+  const { format, onProgress, ...opt } = options || {};
   const extra = buildDownloadExtraArgs(format);
   const args = buildDownloadArgs({
     url,
@@ -176,21 +197,20 @@ export async function downloadInternal<F extends FormatKeyWord>(
     }
   });
 
-  const paths = parsePrintedPaths(output);
-  onPaths?.(paths);
-  return { output, paths };
+  const newOutput = parsePrintedOutput(output);
+  const info = parsePrintedVideoInfo(output) as DownloadedVideoInfo | null;
+  return { output: newOutput, info };
 }
 
 /**
  * Spawns a sync download process.
- * Emits 'paths' event with { filePaths, thumbnailPaths, subtitlePaths } on completion.
  */
 export function downloadSync<F extends FormatKeyWord>(
   ctx: DownloadContext,
   url: string,
   options?: Omit<FormatOptions<F>, 'onProgress'>,
 ): ChildProcess {
-  const { format, onPaths, ...opt } = options || {};
+  const { format, ...opt } = options || {};
   const extra = buildDownloadExtraArgs(format);
   const args = buildDownloadArgs({
     url,
@@ -200,9 +220,6 @@ export function downloadSync<F extends FormatKeyWord>(
     extra,
   });
   const ytDlpProcess = executeDownload(ctx, args);
-
-  // Always attach paths listener for 'paths' event
-  attachPathsListener(ytDlpProcess, onPaths);
 
   return ytDlpProcess;
 }
@@ -216,14 +233,10 @@ export async function downloadAsync<F extends FormatKeyWord>(
   options?: FormatOptions<F>,
 ): Promise<DownloadResult> {
   const result = await downloadInternal(ctx, url, options);
-  const { filePaths, thumbnailPaths, subtitlePaths } = categorizePaths(
-    result.paths,
-  );
 
   return {
     output: result.output,
-    filePaths,
-    thumbnailPaths,
-    subtitlePaths,
+    filePath: result.info?.filepath ?? '',
+    info: result.info ?? undefined,
   };
 }

@@ -604,6 +604,8 @@ export const helpers = {
 // Re-export types for consumers
 export type {
   ArgsOptions,
+  DownloadResult,
+  DownloadedVideoInfo,
   FormatOptions,
   VideoInfo,
   VideoProgress,
