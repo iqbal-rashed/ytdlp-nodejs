@@ -22,8 +22,6 @@ features:
     details: Written in TypeScript with comprehensive type definitions.
   - title: 🎵 Audio Extraction
     details: Extract audio in various formats (MP3, FLAC, etc.) effortlessly.
-  - title: 🔄 Auto-Updates
-    details: Built-in binary management handles yt-dlp downloading and updating.
   - title: 💻 CLI Included
     details: Comes with a powerful interactive CLI for quick tasks.
   - title: 🚀 NextDownloader.com

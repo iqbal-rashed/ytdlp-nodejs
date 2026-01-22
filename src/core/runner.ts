@@ -16,20 +16,17 @@ export type RunYtDlpOptions = {
   onStderr?: (data: string) => void;
   onProgress?: (progress: VideoProgress) => void;
   passThrough?: PassThrough;
-  parseStdoutProgress?: boolean;
-  parseStderrProgress?: boolean;
+  debugPrintCommandLine?: boolean;
 };
 
 export type SpawnYtDlpOptions = {
-  emitProgress?: boolean;
-  parseStdoutProgress?: boolean;
-  parseStderrProgress?: boolean;
+  debugPrintCommandLine?: boolean;
 };
 
 function emitProgress(
   data: string,
   onProgress?: (progress: VideoProgress) => void,
-  emit?: (progress: VideoProgress) => void
+  emit?: (progress: VideoProgress) => void,
 ) {
   const progress = stringToProgress(data);
   if (progress) {
@@ -41,29 +38,24 @@ function emitProgress(
 export function spawnYtDlp(
   binaryPath: string,
   args: string[],
-  options: SpawnYtDlpOptions = {}
+  options: SpawnYtDlpOptions = {},
 ) {
+  if (options.debugPrintCommandLine) {
+    console.error(`[ytdlp-nodejs] Command: ${binaryPath} ${args.join(' ')}`);
+  }
   const child = spawn(binaryPath, args, { shell: false });
-  const parseStdoutProgress =
-    options.parseStdoutProgress !== false && options.emitProgress !== false;
-  const parseStderrProgress =
-    options.parseStderrProgress !== false && options.emitProgress !== false;
 
-  if (parseStdoutProgress) {
-    child.stdout.on('data', (data) => {
-      emitProgress(data.toString(), undefined, (progress) =>
-        child.emit('progress', progress)
-      );
-    });
-  }
+  child.stdout.on('data', (data) => {
+    emitProgress(Buffer.from(data).toString(), undefined, (progress) =>
+      child.emit('progress', progress),
+    );
+  });
 
-  if (parseStderrProgress) {
-    child.stderr.on('data', (data) => {
-      emitProgress(data.toString(), undefined, (progress) =>
-        child.emit('progress', progress)
-      );
-    });
-  }
+  child.stderr.on('data', (data) => {
+    emitProgress(Buffer.from(data).toString(), undefined, (progress) =>
+      child.emit('progress', progress),
+    );
+  });
 
   return child;
 }
@@ -71,37 +63,32 @@ export function spawnYtDlp(
 export function runYtDlp(
   binaryPath: string,
   args: string[],
-  options: RunYtDlpOptions = {}
+  options: RunYtDlpOptions = {},
 ): Promise<RunYtDlpResult> {
   return new Promise((resolve, reject) => {
+    if (options.debugPrintCommandLine) {
+      console.error(`[ytdlp-nodejs] Command: ${binaryPath} ${args.join(' ')}`);
+    }
     const child = spawn(binaryPath, args, { shell: false });
     let stdout = '';
     let stderr = '';
-    const parseStdoutProgress =
-      options.parseStdoutProgress !== false && !options.passThrough;
-    const parseStderrProgress = options.parseStderrProgress !== false;
-
     if (options.passThrough) {
       child.stdout.pipe(options.passThrough);
     }
 
     child.stdout.on('data', (data) => {
       if (options.passThrough) return;
-      const text = data.toString();
+      const text = Buffer.from(data).toString();
       stdout += text;
       options.onStdout?.(text);
-      if (parseStdoutProgress) {
-        emitProgress(text, options.onProgress);
-      }
+      emitProgress(text, options.onProgress);
     });
 
     child.stderr.on('data', (data) => {
-      const text = data.toString();
+      const text = Buffer.from(data).toString();
       stderr += text;
       options.onStderr?.(text);
-      if (parseStderrProgress) {
-        emitProgress(text, options.onProgress);
-      }
+      emitProgress(text, options.onProgress);
     });
 
     child.on('close', (code) => {
@@ -116,7 +103,7 @@ export function runYtDlp(
             stderr,
             args,
             hint,
-          })
+          }),
         );
       }
     });
@@ -125,7 +112,7 @@ export function runYtDlp(
       reject(
         new YtDlpError(`Failed to start yt-dlp process: ${err.message}`, {
           args,
-        })
+        }),
       );
     });
   });

@@ -146,18 +146,30 @@ export interface VideoFormat {
 }
 
 export interface VideoProgress {
+  /** Output filename (may be '-' when streaming to stdout) */
   filename: string;
+  /** Current status: 'downloading' during download, 'finished' when complete */
   status: 'downloading' | 'finished';
-  downloaded: number;
-  downloaded_str: string;
-  total: number;
-  total_str: string;
-  speed: number;
-  speed_str: string;
-  eta: number;
-  eta_str: string;
-  percentage: number;
-  percentage_str: string;
+  /** Downloaded bytes (may be undefined when streaming) */
+  downloaded?: number;
+  /** Formatted downloaded bytes string */
+  downloaded_str?: string;
+  /** Total bytes (may be undefined when file size is unknown) */
+  total?: number;
+  /** Formatted total bytes string */
+  total_str?: string;
+  /** Download speed in bytes/sec (may be undefined) */
+  speed?: number;
+  /** Formatted speed string */
+  speed_str?: string;
+  /** Estimated time remaining in seconds */
+  eta?: number;
+  /** Formatted ETA string */
+  eta_str?: string;
+  /** Download percentage (0-100, may be undefined when total is unknown) */
+  percentage?: number;
+  /** Formatted percentage string */
+  percentage_str?: string;
 }
 
 export type VideoQuality =

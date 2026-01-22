@@ -249,7 +249,7 @@ export function createArgs(options: ArgsOptions): string[] {
   if (options.progressDelta)
     args.push('--progress-delta', options.progressDelta.toString());
   if (options.verbose) args.push('--verbose');
-  if (options.debugPrintCommandLine) args.push('--print-command-line');
+  // debugPrintCommandLine is handled at execution level, not as a yt-dlp arg
   if (options.dumpPages) args.push('--dump-pages');
   if (options.writePages) args.push('--write-pages');
   if (options.printTraffic) args.push('--print-traffic');

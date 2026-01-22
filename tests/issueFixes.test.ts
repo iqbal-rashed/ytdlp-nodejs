@@ -22,9 +22,12 @@ describe('issue fixes', () => {
   });
 
   describe('#59 debugPrintCommandLine option', () => {
-    test('adds --print-command-line when debugPrintCommandLine is true', () => {
+    // debugPrintCommandLine is handled at the runner level, not as a yt-dlp arg
+    // It prints the command to stderr before execution
+    test('does not add any flag to args (handled at runner level)', () => {
       const args = createArgs({ debugPrintCommandLine: true });
-      expect(args).toContain('--print-command-line');
+      // Should not contain --print-command-line (not a valid yt-dlp flag)
+      expect(args).not.toContain('--print-command-line');
     });
 
     test('does not add --print-command-line when false', () => {

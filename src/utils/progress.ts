@@ -95,24 +95,39 @@ export function stringToProgress(str: string): VideoProgress | undefined {
 
     const object = JSON.parse(jsonStr);
 
-    const total_bytes = Number(object.total_bytes);
-    const total = isNaN(total_bytes)
-      ? Number(object.total_bytes_estimate)
-      : total_bytes;
+    // Helper to parse numeric values - returns undefined for null/NA/invalid values
+    const parseNum = (val: unknown): number | undefined => {
+      if (val === null || val === undefined || val === 'NA') return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    };
+
+    const downloaded = parseNum(object.downloaded_bytes);
+    const total =
+      parseNum(object.total_bytes) ?? parseNum(object.total_bytes_estimate);
+    const speed = parseNum(object.speed);
+    const eta = parseNum(object.eta);
+
+    // Calculate percentage only if both values are available
+    const pct =
+      downloaded !== undefined && total !== undefined && total > 0
+        ? toFixedNumber((100 * downloaded) / total, 2)
+        : undefined;
 
     return {
       filename: object.filename,
       status: object.status,
-      downloaded: Number(object.downloaded_bytes),
-      downloaded_str: formatBytes(object.downloaded_bytes),
+      downloaded: downloaded,
+      downloaded_str:
+        downloaded !== undefined ? formatBytes(downloaded) : undefined,
       total: total,
-      total_str: formatBytes(total),
-      speed: Number(object.speed),
-      speed_str: formatBytes(object.speed) + '/s',
-      eta: Number(object.eta),
-      eta_str: secondsToHms(object.eta),
-      percentage: percentage(object.downloaded_bytes, total),
-      percentage_str: percentage(object.downloaded_bytes, total) + '%',
+      total_str: total !== undefined ? formatBytes(total) : undefined,
+      speed: speed,
+      speed_str: speed !== undefined ? formatBytes(speed) + '/s' : undefined,
+      eta: eta,
+      eta_str: eta !== undefined ? secondsToHms(eta) : undefined,
+      percentage: pct,
+      percentage_str: pct !== undefined ? pct + '%' : undefined,
     };
   } catch {
     return undefined;

@@ -27,16 +27,14 @@ export interface StreamContext {
 async function executeWithStream(
   ctx: StreamContext,
   args: string[],
-  onData?: (data: string) => void,
+  onProgress?: (progress: VideoProgress) => void,
   passThrough?: PassThrough,
 ): Promise<string> {
   if (!ctx.binaryPath) throw new Error('Ytdlp binary not found');
 
   const result = await runYtDlp(ctx.binaryPath, args, {
-    onStdout: onData,
-    onStderr: onData,
     passThrough,
-    parseStdoutProgress: !passThrough,
+    onProgress,
   });
   return result.stdout;
 }
@@ -60,17 +58,7 @@ export function createStream<F extends FormatKeyWord>(
 
   const passThrough = new PassThrough();
 
-  const promise = executeWithStream(
-    ctx,
-    args,
-    (data) => {
-      const progress = stringToProgress(data);
-      if (progress) {
-        onProgress?.(progress);
-      }
-    },
-    passThrough,
-  );
+  const promise = executeWithStream(ctx, args, onProgress, passThrough);
 
   return {
     promise,
@@ -147,8 +135,6 @@ export async function getFileAsync<F extends FormatKeyWord>(
       }
     },
     passThrough,
-    parseStdoutProgress: false,
-    parseStderrProgress: false,
   });
 
   // Determine content type and extension from format options

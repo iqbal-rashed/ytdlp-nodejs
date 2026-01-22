@@ -223,7 +223,7 @@ export class YtDlp {
   }
 
   private _execute(args: string[]): ChildProcess {
-    return spawnYtDlp(this.binaryPath, args, { emitProgress: true });
+    return spawnYtDlp(this.binaryPath, args);
   }
 
   private async _executeAsync(
@@ -235,7 +235,6 @@ export class YtDlp {
     const result = await runYtDlp(this.binaryPath, args, {
       onStdout: onData,
       onStderr: onData,
-      parseStdoutProgress: true,
     });
     return result.stdout;
   }
