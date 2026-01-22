@@ -56,6 +56,7 @@
   "bugs": {
     "url": "https://github.com/iqbal-rashed/ytdlp-nodejs/issues"
   },
+  "homepage": "https://iqbal-rashed.github.io/ytdlp-nodejs",
   "devDependencies": {
     "@eslint/js": "^9.23.0",
     "@rspress/plugin-shiki": "^1.47.0",
