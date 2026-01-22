@@ -129,9 +129,12 @@ export function buildDownloadExtraArgs<F extends FormatKeyWord>(
 ): string[] {
   const extra = parseFormatOptions(format);
 
-  // Build JSON formatted print string with all video info fields
+  // Build JSON formatted print string with all video info fields.
+  // Note: %(field)j outputs JSON-encoded values, but for missing values it outputs
+  // bare 'NA' which breaks JSON parsing. Using %(field|null)j provides a fallback
+  // that outputs the literal 'null' when the field is missing/NA.
   const jsonFields = VIDEO_INFO_FIELDS.map(
-    (field) => `"${field}":"%(${field})j"`,
+    (field) => `"${field}":%(${field}|null)j`,
   ).join(',');
   extra.push('--print', `after_move:__YTDLP_VIDEO_INFO__:{${jsonFields}}`);
 

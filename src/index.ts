@@ -75,8 +75,8 @@ export { BIN_DIR };
  * ```
  */
 export class YtDlp {
-  private readonly binaryPath: string;
-  private readonly ffmpegPath?: string;
+  public binaryPath: string;
+  public ffmpegPath?: string;
 
   /**
    * Creates a new YtDlp instance.

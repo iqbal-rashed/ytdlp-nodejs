@@ -24,5 +24,28 @@ async function downloadVideoAsync() {
     console.error('Error:', error);
   }
 }
+function downloadVideoSync() {
+  try {
+    const d = ytdlp.download('https://www.youtube.com/watch?v=_AL4IwHuHlY', {
+      format: {
+        filter: 'mergevideo',
+        type: 'mp4',
+        quality: '1080p',
+      },
+    });
 
-downloadVideoAsync();
+    d.on('progress', (d) => {
+      console.log('Testing', d);
+    });
+
+    d.on('finish', (d) => {
+      console.log('Download Finished', d);
+    });
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+
+downloadVideoAsync().then(() => {
+  downloadVideoSync();
+});

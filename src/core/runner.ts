@@ -1,9 +1,10 @@
 import { spawn } from 'child_process';
 import { PassThrough } from 'stream';
 import { stringToProgress } from '../utils/progress';
-import { VideoProgress } from '../types';
+import { DownloadedVideoInfo, VideoProgress } from '../types';
 import { YtDlpError } from './errors';
 import { detectYtDlpHint } from './hints';
+import { parsePrintedOutput, parsePrintedVideoInfo } from './parsers/paths';
 
 export type RunYtDlpResult = {
   stdout: string;
@@ -44,17 +45,35 @@ export function spawnYtDlp(
     console.error(`[ytdlp-nodejs] Command: ${binaryPath} ${args.join(' ')}`);
   }
   const child = spawn(binaryPath, args, { shell: false });
+  let stdout = '';
+  let stderr = '';
 
   child.stdout.on('data', (data) => {
-    emitProgress(Buffer.from(data).toString(), undefined, (progress) =>
+    const text = Buffer.from(data).toString();
+    stdout += text;
+    emitProgress(text, undefined, (progress) =>
       child.emit('progress', progress),
     );
   });
 
   child.stderr.on('data', (data) => {
-    emitProgress(Buffer.from(data).toString(), undefined, (progress) =>
+    const text = Buffer.from(data).toString();
+    stderr += text;
+    emitProgress(text, undefined, (progress) =>
       child.emit('progress', progress),
     );
+  });
+
+  child.on('close', () => {
+    const newOutput = parsePrintedOutput(stdout);
+    const info = parsePrintedVideoInfo(stdout) as DownloadedVideoInfo | null;
+
+    child.emit('finish', {
+      output: newOutput,
+      filePath: info?.filepath ?? '',
+      info,
+      stderr,
+    });
   });
 
   return child;
