@@ -16,11 +16,7 @@ async function downloadWithCallback() {
     const output = await ytdlp.downloadAsync(
       'https://www.youtube.com/watch?v=gICjCjpSg6M',
       {
-        format: {
-          filter: 'mergevideo',
-          type: 'mp4',
-          quality: '720p',
-        },
+        format: 'mergevideo',
         beforeDownload: (info) => {
           console.log(info);
         },
@@ -44,11 +40,8 @@ async function downloadWithFluentAPI() {
     // Chain methods like FFmpeg - .download(url) returns a builder
     const result = await ytdlp
       .download('https://www.youtube.com/watch?v=_AL4IwHuHlY')
-      .format({
-        filter: 'mergevideo',
-        type: 'mp4',
-        quality: '720p',
-      })
+      .filter('mergevideo')
+      .type('mkv')
       .output(downloadsDir)
       .embedThumbnail()
       .on('progress', (progress) => {

@@ -10,7 +10,7 @@ Sometimes you may need to use a specific `yt-dlp` flag that isn't explicitly typ
 // Using fluent builder API
 const result = await ytdlp
   .download(url)
-  .format('mergevideo')
+  .format({ filter: 'mergevideo', quality: '1080p', type: 'mp4' })
   .addArgs('--match-filter', 'duration > 60')
   .run();
 

@@ -270,7 +270,7 @@ export class YtDlp {
    * // With fluent API
    * const result = await ytdlp
    *   .download('https://youtube.com/watch?v=...')
-   *   .format('mergevideo')
+   *   .filter('mergevideo')
    *   .quality('1080p')
    *   .on('progress', (p) => console.log(p.percentage_str))
    *   .run();
@@ -354,7 +354,7 @@ export class YtDlp {
    * // Fluent builder API
    * await ytdlp
    *   .stream('https://youtube.com/watch?v=...')
-   *   .format('audioandvideo')
+   *   .filter('audioandvideo')
    *   .quality('highest')
    *   .type('mp4')
    *   .on('progress', (p) => console.log(p.percentage_str))
@@ -413,7 +413,7 @@ export class YtDlp {
    * // Pipe to file with download events
    * await ytdlp
    *   .execBuilder('https://youtube.com/watch?v=...')
-   *   .format('mergevideo')
+   *   .filter('mergevideo')
    *   .quality('720p')
    *   .on('beforeDownload', (info) => console.log('Starting:', info.title))
    *   .on('afterDownload', (info) => console.log('Finished:', info.filepath))

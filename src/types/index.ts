@@ -231,19 +231,24 @@ export type TypeOptions = {
 
 export type FormatKeyWord = keyof QualityOptions;
 
-export type FormatArgs<F extends FormatKeyWord> =
-  | {
-      filter: F;
-      quality?: QualityOptions[F];
-      type?: TypeOptions[F];
-    }
-  | string;
+export type FormatArgs<F extends string = string> =
+  // 2. Check: Is 'F' one of our known keywords?
+  F extends FormatKeyWord
+    ? // YES: Return the strict Object and Literal types
+        | {
+            filter: F;
+            quality?: QualityOptions[F];
+            type?: TypeOptions[F];
+          }
+        | F
+    : // NO: It's a custom string, so just return it loosely
+      string;
 
 export interface FormatOptions<F extends FormatKeyWord> extends Omit<
   ArgsOptions,
   'format' | 'progressTemplate'
 > {
-  format?: FormatArgs<F>;
+  format?: FormatArgs<F> | string;
   onProgress?: (p: VideoProgress) => void;
   /**
    * Callback fired with video info before download starts.

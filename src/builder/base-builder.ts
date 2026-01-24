@@ -32,7 +32,7 @@ export abstract class BaseBuilder extends EventEmitter {
   protected binaryPath: string = '';
   protected ffmpegPath?: string;
   protected videoUrl: string = '';
-  protected formatValue?: FormatArgs<FormatKeyWord>;
+  protected formatValue?: FormatArgs<FormatKeyWord> | string;
   protected extraArgs: ArgsOptions = {};
   protected rawArgs: string[] = [];
   protected process?: ChildProcess;
@@ -95,7 +95,7 @@ export abstract class BaseBuilder extends EventEmitter {
   /**
    * Set the format filter (mergevideo, audioonly, videoonly, audioandvideo)
    */
-  format<F extends FormatKeyWord>(format: FormatArgs<F>): this {
+  format<F extends FormatKeyWord>(format: FormatArgs<F> | string): this {
     this.formatValue = format;
     return this;
   }
@@ -114,7 +114,11 @@ export abstract class BaseBuilder extends EventEmitter {
   quality<F extends FormatKeyWord>(quality: QualityOptions[F]): this {
     const existing =
       typeof this.formatValue === 'object' ? this.formatValue : {};
-    this.formatValue = { ...existing, quality } as FormatArgs<F>;
+    this.formatValue = {
+      filter: this.formatValue,
+      ...existing,
+      quality,
+    } as FormatArgs<F>;
     return this;
   }
 
@@ -124,7 +128,11 @@ export abstract class BaseBuilder extends EventEmitter {
   type<F extends FormatKeyWord>(type: TypeOptions[F]): this {
     const existing =
       typeof this.formatValue === 'object' ? this.formatValue : {};
-    this.formatValue = { ...existing, type } as FormatArgs<F>;
+    this.formatValue = {
+      filter: this.formatValue,
+      ...existing,
+      type,
+    } as FormatArgs<F>;
     return this;
   }
 

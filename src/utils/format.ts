@@ -13,23 +13,41 @@ const ByQuality = {
   lowest: 'wv*',
 };
 
+const ByFilter = ['audioonly', 'videoonly', 'audioandvideo', 'mergevideo'];
+
 export function parseFormatOptions<T extends FormatKeyWord>(
   format?: FormatOptions<T>['format'] | string,
 ) {
+  let filter: string | undefined;
+  let type: string | undefined;
+  let quality: string | number | undefined;
   if (!format) {
     return [];
   }
 
-  if (typeof format === 'string') {
+  if (typeof format === 'string' && !ByFilter.includes(format)) {
     return ['-f', format];
   }
 
-  if (Object.keys(format).length === 0) {
+  if (typeof format === 'string' && ByFilter.includes(format)) {
+    filter = format;
+  }
+
+  if (
+    Object.keys(format).length === 0 ||
+    !format ||
+    typeof format !== 'object'
+  ) {
     return ['-f', 'bv*+ba'];
   }
 
+  if (typeof format === 'object') {
+    filter = format.filter;
+    type = format.type;
+    quality = format.quality;
+  }
+
   let formatArr: string[] = [];
-  const { filter, quality, type } = format;
 
   if (filter === 'audioonly') {
     formatArr = [

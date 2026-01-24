@@ -44,7 +44,7 @@ export interface DownloadBuilderEvents {
  *
  * const result = await new Download()
  *   .url('https://youtube.com/watch?v=...')
- *   .format('mergevideo')
+ *   .filter('mergevideo')
  *   .quality('1080p')
  *   .type('mp4')
  *   .output('./downloads')

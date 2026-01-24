@@ -32,7 +32,7 @@ download(url: string, options?: FormatOptions): Download
 ```typescript
 const result = await ytdlp
   .download('https://youtube.com/watch?v=...')
-  .format('mergevideo')
+  .filter('mergevideo')
   .quality('1080p')
   .type('mp4')
   .output('./downloads')

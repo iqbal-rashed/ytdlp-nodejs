@@ -47,7 +47,7 @@ export interface StreamResult {
  * // Stream to file - pipe() is awaitable
  * const result = await ytdlp
  *   .stream('https://youtube.com/watch?v=...')
- *   .format('mergevideo')
+ *   .filter('mergevideo')
  *   .quality('720p')
  *   .type('mp4')
  *   .on('progress', (p) => console.log(p.percentage_str))
@@ -171,7 +171,7 @@ export class Stream extends BaseBuilder {
    * ```typescript
    * const result = await ytdlp
    *   .stream(url)
-   *   .format('mergevideo')
+   *   .filter('mergevideo')
    *   .pipe(createWriteStream('video.mp4'));
    * ```
    */

@@ -97,7 +97,7 @@ export interface ExecPipeResult {
  * // Pipe to file (like Stream builder)
  * const result = await new Exec()
  *   .url('https://youtube.com/watch?v=...')
- *   .format('mergevideo')
+ *   .filter('mergevideo')
  *   .quality('720p')
  *   .type('mp4')
  *   .on('beforeDownload', (info) => console.log('Starting:', info.title))
@@ -282,7 +282,7 @@ export class Exec extends BaseBuilder {
    *
    * const result = await new Exec()
    *   .url(url)
-   *   .format('mergevideo')
+   *   .filter('mergevideo')
    *   .on('beforeDownload', (info) => console.log('Starting:', info.title))
    *   .pipe(createWriteStream('video.mp4'));
    * ```

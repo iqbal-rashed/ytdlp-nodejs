@@ -39,7 +39,7 @@ const ytdlp = new YtDlp();
 // Download a video with fluent API
 const result = await ytdlp
   .download('https://youtube.com/watch?v=dQw4w9WgXcQ')
-  .format('mergevideo')
+  .filter('mergevideo')
   .quality('1080p')
   .type('mp4')
   .on('progress', (p) => console.log(`${p.percentage_str}`))
@@ -67,23 +67,6 @@ Launch the interactive menu to access all features with guided prompts:
 
 ```bash
 ytdlp
-```
-
-### Commands
-
-#### Interactive Commands
-
-These commands prompt for quality/format selection:
-
-```bash
-# Download video (interactive quality selection)
-ytdlp download <url>
-
-# Download audio only (interactive format selection)
-ytdlp audio <url>
-
-# Get video info (formatted display)
-ytdlp info <url>
 ```
 
 #### Direct Commands
@@ -125,9 +108,7 @@ Returns a fluent builder for downloading with chainable methods.
 // Fluent builder API (recommended)
 const result = await ytdlp
   .download('https://youtube.com/watch?v=...')
-  .filter('mergevideo')
-  .quality('1080p')
-  .type('mp4')
+  .format({ filter: 'mergevideo', quality: '1080p', type: 'mp4' })
   .output('./downloads')
   .embedThumbnail()
   .on('progress', (p) => console.log(`${p.percentage_str}`))
@@ -202,7 +183,7 @@ import { createWriteStream } from 'fs';
 // Fluent builder API
 const result = await ytdlp
   .stream('https://youtube.com/watch?v=...')
-  .format('audioandvideo')
+  .filter('audioandvideo')
   .quality('highest')
   .type('mp4')
   .on('progress', (p) => console.log(p.percentage_str))
@@ -211,10 +192,10 @@ const result = await ytdlp
 console.log(`Bytes: ${result.bytes}`);
 
 // Sync pipe
-ytdlp.stream(url).format('audioandvideo').pipe(writableStream);
+ytdlp.stream(url).filter('audioandvideo').pipe(writableStream);
 
 // Stream to buffer
-const buffer = await ytdlp.stream(url).format('audioonly').toBuffer();
+const buffer = await ytdlp.stream(url).filter('audioonly').toBuffer();
 ```
 
 ##### Stream Builder Methods
