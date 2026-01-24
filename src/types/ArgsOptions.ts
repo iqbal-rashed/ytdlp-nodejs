@@ -3,10 +3,6 @@
  * @see https://github.com/yt-dlp/yt-dlp#usage-and-options
  */
 export interface ArgsOptions {
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GENERAL OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Print help text and exit. Maps to `--help`. */
   printHelp?: boolean;
 
@@ -102,10 +98,6 @@ export interface ArgsOptions {
    */
   jsRuntime?: string;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // NETWORK OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Use the specified HTTP/HTTPS/SOCKS proxy. Maps to `--proxy URL`. */
   proxy?: string;
 
@@ -130,10 +122,6 @@ export interface ArgsOptions {
   /** Enable file:// URLs. Maps to `--enable-file-urls`. */
   enableFileUrls?: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // GEO-RESTRICTION OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Proxy for geo verification. Maps to `--geo-verification-proxy URL`. */
   geoVerificationProxy?: string;
 
@@ -148,10 +136,6 @@ export interface ArgsOptions {
 
   /** Force bypass with an IP block. Maps to `--geo-bypass-ip-block IP_BLOCK`. */
   geoBypassIpBlock?: string;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VIDEO SELECTION OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /** Playlist items to download (e.g., "1,3,5-7"). Maps to `--playlist-items ITEM_SPEC`. */
   playlistItems?: string;
@@ -233,10 +217,6 @@ export interface ArgsOptions {
 
   /** Stop on rejected title. Maps to `--break-on-reject`. */
   breakOnReject?: boolean;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DOWNLOAD OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /**
    * Number of fragments to download concurrently.
@@ -377,10 +357,6 @@ export interface ArgsOptions {
   /** Don't read batch file. Maps to `--no-batch-file`. */
   noBatchFile?: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // FILESYSTEM OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Limit filename length to N characters. Maps to `--trim-filenames LENGTH`. */
   trimFileNames?: number;
 
@@ -486,10 +462,6 @@ export interface ArgsOptions {
   /** Don't use .part files. Maps to `--no-part-files`. */
   noPartFiles?: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // THUMBNAIL OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Write thumbnail image to disk. Maps to `--write-thumbnail`. */
   writeThumbnail?: boolean;
 
@@ -501,10 +473,6 @@ export interface ArgsOptions {
 
   /** Convert thumbnails to format. Maps to `--convert-thumbnails FORMAT`. */
   convertThumbnails?: string;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // INTERNET SHORTCUT OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /** Write internet shortcut file. Maps to `--write-link`. */
   writeLink?: boolean;
@@ -520,10 +488,6 @@ export interface ArgsOptions {
 
   /** Write .desktop Linux shortcut. Maps to `--write-desktop-link`. */
   writeDesktopLink?: boolean;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VERBOSITY AND SIMULATION OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /** Quiet mode, print only errors. Maps to `-q, --quiet`. */
   quiet?: boolean;
@@ -609,10 +573,6 @@ export interface ArgsOptions {
   /** Dump parsed web pages. Maps to `--dump-pages`. */
   dumpPages?: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WORKAROUNDS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Force character encoding. Maps to `--encoding ENCODING`. */
   encoding?: string;
 
@@ -645,10 +605,6 @@ export interface ArgsOptions {
 
   /** Seconds to sleep before subtitle download. Maps to `--sleep-subtitles SEC`. */
   sleepSubtitles?: number;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // VIDEO FORMAT OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /** Video format code. Maps to `-f, --format FORMAT`. */
   format?: string;
@@ -701,10 +657,6 @@ export interface ArgsOptions {
   /** Don't check formats. Maps to `--no-check-formats`. */
   noCheckFormats?: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SUBTITLE OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** Write subtitle files. Maps to `--write-subs`. */
   writeSubs?: boolean;
 
@@ -725,10 +677,6 @@ export interface ArgsOptions {
 
   /** Languages of subtitles to download. Maps to `--sub-langs LANGS`. */
   subLangs?: string[];
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // AUTHENTICATION OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /** Login username. Maps to `-u, --username USERNAME`. */
   username?: string;
@@ -760,10 +708,6 @@ export interface ArgsOptions {
   /** Client certificate password. Maps to `--client-certificate-password PASSWORD`. */
   clientCertificatePassword?: string;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ADOBE PASS OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** List available MSOs. Maps to `--ap-list-mso`. */
   apListMso?: boolean;
 
@@ -775,10 +719,6 @@ export interface ArgsOptions {
 
   /** Adobe Pass password. Maps to `--ap-password PASSWORD`. */
   apPassword?: string;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // POST-PROCESSING OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /** Extract and save audio. Maps to `-x, --extract-audio`. */
   extractAudio?: boolean;
@@ -885,10 +825,6 @@ export interface ArgsOptions {
   /** Enable a plugin-based postprocessor. Maps to `--use-postprocessor NAME`. */
   usePostProcessor?: string[];
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // SPONSORBLOCK OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /**
    * SponsorBlock categories to create chapters for.
    * Available: sponsor, intro, outro, selfpromo, preview, filler, interaction, etc.
@@ -912,10 +848,6 @@ export interface ArgsOptions {
   /** SponsorBlock API URL. Maps to `--sponsorblock-api URL`. */
   sponsorblockApi?: string;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // EXTRACTOR OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /**
    * Pass arguments to specific extractors.
    * Maps to `--extractor-args IE_KEY:ARGS`.
@@ -929,10 +861,6 @@ export interface ArgsOptions {
   /** Don't split HLS at discontinuities. Maps to `--no-hls-split-discontinuity`. */
   noHlsSplitDiscontinuity?: boolean;
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // DEBUG AND HTTP OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** HTTP Referer header. Maps to `--referer URL`. */
   referer?: string;
 
@@ -942,19 +870,11 @@ export interface ArgsOptions {
   /** Additional HTTP headers. Maps to `--headers FIELD:VALUE`. */
   headers?: { [key: string]: string };
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // INFORMATION OPTIONS
-  // ═══════════════════════════════════════════════════════════════════════════
-
   /** List all available formats. Maps to `-F, --list-formats`. */
   listFormats?: boolean;
 
   /** List all available thumbnails. Maps to `--list-thumbnails`. */
   listThumbnails?: boolean;
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RAW OPTIONS PASSTHROUGH
-  // ═══════════════════════════════════════════════════════════════════════════
 
   /**
    * Additional yt-dlp options to append.

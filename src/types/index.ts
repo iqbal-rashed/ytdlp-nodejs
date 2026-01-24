@@ -1,12 +1,20 @@
+import { ChildProcess } from 'node:child_process';
 import { ArgsOptions } from './ArgsOptions';
 
 export { ArgsOptions };
 
+/**
+ * Global configuration options for YtDlp instance.
+ */
 export interface YtDlpOptions {
   binaryPath?: string;
   ffmpegPath?: string;
 }
 
+/**
+ * Detailed information about a video.
+ * Returned by `getInfo` or `dumpSingleJson`.
+ */
 export interface VideoInfo {
   id: string;
   title: string;
@@ -107,6 +115,9 @@ interface Subtitles {
 
 export type InfoType = 'video' | 'playlist';
 
+/**
+ * Information about a playlist.
+ */
 export interface PlaylistInfo {
   id: string;
   title: string;
@@ -123,6 +134,9 @@ export interface PlaylistInfo {
   epoch: number;
 }
 
+/**
+ * Video thumbnail information.
+ */
 export interface VideoThumbnail {
   id: number;
   width?: string | number;
@@ -130,6 +144,9 @@ export interface VideoThumbnail {
   url: string;
 }
 
+/**
+ * Video format information.
+ */
 export interface VideoFormat {
   format_id: string;
   format_note?: string;
@@ -145,6 +162,9 @@ export interface VideoFormat {
   acodec: string;
 }
 
+/**
+ * Progress update data emitted during download.
+ */
 export interface VideoProgress {
   /** Output filename (may be '-' when streaming to stdout) */
   filename: string;
@@ -232,22 +252,9 @@ export interface FormatOptions<F extends FormatKeyWord> extends Omit<
   beforeDownload?: (info: DownloadedVideoInfo) => void;
 }
 
-export type PipeResponse = {
-  promise: Promise<string>;
-  pipe: (
-    destination: NodeJS.WritableStream,
-    options?: {
-      end?: boolean;
-    },
-  ) => NodeJS.WritableStream;
-  pipeAsync: (
-    destination: NodeJS.WritableStream,
-    options?: {
-      end?: boolean;
-    },
-  ) => Promise<NodeJS.WritableStream>;
-};
-
+/**
+ * Metadata for a downloaded file.
+ */
 export interface FileMetadata {
   name: string;
   type: string;
@@ -261,6 +268,9 @@ export interface GetFileOptions<
   metadata?: FileMetadata;
 }
 
+/**
+ * Options for fetching video information.
+ */
 export interface InfoOptions {
   /**
    * If `true`, returns a flat list with limited information for playlist items.
@@ -304,6 +314,9 @@ export type FormatTable = {
   raw: string;
 };
 
+/**
+ * Result of `getFormats`. Can be JSON info or a parsed table.
+ */
 export type FormatsResult =
   | {
       source: 'json';
@@ -315,6 +328,9 @@ export type FormatsResult =
       table: FormatTable;
     };
 
+/**
+ * Result of the `update` command.
+ */
 export type UpdateResult = {
   method: 'built-in' | 'download';
   binaryPath: string;
@@ -512,7 +528,7 @@ export interface DownloadProcessEvents {
  * Typed ChildProcess for download operations with progress and finish events.
  * Returned by YtDlp.download() method.
  */
-export interface DownloadProcess {
+export interface DownloadProcess extends ChildProcess {
   /** Adds a listener for the specified event. */
   on<K extends keyof DownloadProcessEvents>(
     event: K,
@@ -556,28 +572,6 @@ export interface DownloadProcess {
   ): ((...args: unknown[]) => void)[];
   /** Removes all listeners, or those of the specified event. */
   removeAllListeners(event?: keyof DownloadProcessEvents): this;
-  /** Kills the child process. */
-  kill(signal?: NodeJS.Signals | number): boolean;
-  /** The process identifier (PID) of the child process. */
-  readonly pid: number | undefined;
-  /** Whether the process is connected. */
-  readonly connected: boolean;
-  /** Standard input stream. */
-  readonly stdin: import('stream').Writable | null;
-  /** Standard output stream. */
-  readonly stdout: import('stream').Readable | null;
-  /** Standard error stream. */
-  readonly stderr: import('stream').Readable | null;
-  /** Exit code of the child process. */
-  readonly exitCode: number | null;
-  /** Signal that terminated the process. */
-  readonly signalCode: NodeJS.Signals | null;
-  /** Whether the child process was spawned successfully. */
-  readonly spawnfile: string;
-  /** Arguments used to spawn the child process. */
-  readonly spawnargs: string[];
-  /** Whether the process has been killed. */
-  readonly killed: boolean;
 }
 
 /**
@@ -588,11 +582,4 @@ export interface SubtitleInfo {
   languages: string[];
   ext: string;
   autoCaption: boolean;
-}
-
-export interface YtDlpContext {
-  /** Path to the yt-dlp binary */
-  binaryPath: string;
-  /** Optional path to the FFmpeg binary */
-  ffmpegPath?: string;
 }

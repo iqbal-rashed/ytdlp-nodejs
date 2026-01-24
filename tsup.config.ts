@@ -36,6 +36,7 @@ export default defineConfig([
     minify: true,
     shims: true,
     outDir: 'dist/cli',
+    external: ['../index', '..', /^[a-z@]/], // Don't bundle node_modules or main library
     banner: {
       js: '#!/usr/bin/env node',
     },
