@@ -2,6 +2,14 @@ import { YtDlp } from '../src/index';
 
 const ytdlp = new YtDlp();
 
+import * as fs from 'fs';
+import * as path from 'path';
+
+const downloadsDir = path.join(__dirname, '..', 'downloads');
+if (!fs.existsSync(downloadsDir)) {
+  fs.mkdirSync(downloadsDir);
+}
+
 // Method 1: Traditional downloadAsync with callback
 async function downloadWithCallback() {
   try {
@@ -19,6 +27,7 @@ async function downloadWithCallback() {
         onProgress: (progress) => {
           console.log(progress);
         },
+        output: path.join(downloadsDir, '%(title)s.%(ext)s'),
       },
     );
 
@@ -40,7 +49,7 @@ async function downloadWithFluentAPI() {
         type: 'mp4',
         quality: '720p',
       })
-      .output('./downloads')
+      .output(downloadsDir)
       .embedThumbnail()
       .on('progress', (progress) => {
         console.log(
@@ -65,6 +74,7 @@ async function downloadAudio() {
     const result = await ytdlp
       .download('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
       .format({ filter: 'audioonly', type: 'mp3', quality: 0 })
+      .output(downloadsDir)
       .on('progress', (p) => console.log(`${p.percentage_str}`))
       .run();
 
@@ -81,13 +91,14 @@ async function streamToFile() {
   try {
     const result = await ytdlp
       .stream('https://www.youtube.com/watch?v=bXUsb57dHU0')
-
       .format({ filter: 'mergevideo', type: 'mp4', quality: '1080p' })
       .on('beforeDownload', (info) => {
         console.log(info.title);
       })
       .on('progress', (p) => console.log(`Streaming: ${p.percentage_str}`))
-      .pipeAsync(createWriteStream('./streamed-video.mp4'));
+      .pipeAsync(
+        createWriteStream(path.join(downloadsDir, 'streamed-video.mp4')),
+      );
 
     console.log('Stream complete!');
     console.log(`Bytes: ${result.bytes}, Duration: ${result.duration}ms`);

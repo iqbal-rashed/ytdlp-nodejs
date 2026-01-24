@@ -3,6 +3,14 @@ import { YtDlp } from '../src/index';
 
 const ytdlp = new YtDlp();
 
+import * as fs from 'fs';
+import * as path from 'path';
+
+const downloadsDir = path.join(__dirname, '..', 'downloads');
+if (!fs.existsSync(downloadsDir)) {
+  fs.mkdirSync(downloadsDir);
+}
+
 // Method 1: Fluent builder API with awaitable .pipe()
 async function streamWithFluentAPI() {
   try {
@@ -14,7 +22,7 @@ async function streamWithFluentAPI() {
           `Streaming: ${progress.percentage_str} at ${progress.speed_str}`,
         );
       })
-      .pipe(createWriteStream('video.mp4'));
+      .pipe(createWriteStream(path.join(downloadsDir, 'video.mp4')));
 
     console.log('Stream complete!');
     console.log(`Total bytes: ${result.bytes}`);
@@ -48,7 +56,7 @@ async function streamWithOptions() {
         format: { filter: 'audioandvideo', quality: 'highest', type: 'mp4' },
       })
       .on('progress', (p) => console.log(p.percentage_str))
-      .pipeAsync(createWriteStream('video2.mp4'));
+      .pipeAsync(createWriteStream(path.join(downloadsDir, 'video2.mp4')));
 
     console.log('Done! Bytes:', result.bytes);
   } catch (error) {

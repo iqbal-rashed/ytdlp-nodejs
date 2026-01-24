@@ -1,4 +1,4 @@
-import { YtDlp } from 'ytdlp-nodejs';
+import { YtDlp } from '../src/index';
 
 async function update() {
   const ytdlp = new YtDlp();

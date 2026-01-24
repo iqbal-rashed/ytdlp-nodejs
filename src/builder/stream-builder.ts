@@ -19,6 +19,7 @@ export interface StreamBuilderEvents {
   progress: [progress: VideoProgress];
   beforeDownload: [info: DownloadedVideoInfo];
   data: [chunk: Buffer];
+  stderr: [data: string];
   error: [error: Error];
   end: [];
 }
@@ -94,13 +95,7 @@ export class Stream extends BaseBuilder {
    * Build the command arguments
    */
   protected buildArgs(): string[] {
-    const baseArgs = [
-      '-o',
-      '-',
-      '--no-playlist',
-      '--progress',
-      '--no-quiet',
-    ];
+    const baseArgs = ['-o', '-', '--no-playlist', '--progress', '--no-quiet'];
     // Add before_dl print if there are listeners for beforeDownload
     if (this.listenerCount('beforeDownload') > 0) {
       baseArgs.push('--print', buildBeforeDownloadPrintArg());

@@ -398,7 +398,3 @@ const ytdlp = new YtDlp({
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request or open an issue on [GitHub](https://github.com/iqbal-rashed/ytdlp-nodejs).
-
-## License
-
-MIT
