@@ -70,3 +70,48 @@ interface VideoThumbnail {
   resolution?: string;
 }
 ```
+
+## VideoProgress
+
+Progress information returned during download/stream operations.
+
+```typescript
+interface VideoProgress {
+  filename: string;
+  status: 'downloading' | 'finished';
+  downloaded?: number;
+  downloaded_str?: string;
+  total?: number;
+  total_str?: string;
+  speed?: number;
+  speed_str?: string;
+  eta?: number;
+  eta_str?: string;
+  percentage?: number;
+  percentage_str?: string;
+}
+```
+
+## DownloadFinishResult
+
+Result returned by download builder's `run()` method.
+
+```typescript
+interface DownloadFinishResult {
+  output: string;
+  filePaths: string[];
+  info: DownloadedVideoInfo[];
+  stderr: string;
+}
+```
+
+## YtDlpContext
+
+Shared context interface for internal operations.
+
+```typescript
+interface YtDlpContext {
+  binaryPath: string;
+  ffmpegPath?: string;
+}
+```

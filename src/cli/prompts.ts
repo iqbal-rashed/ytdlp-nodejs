@@ -4,6 +4,7 @@
  */
 
 import readline from 'readline';
+import { Colors, Style, color } from './style';
 
 /**
  * Creates a readline-based prompter.
@@ -12,6 +13,7 @@ export function createPrompter() {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
+    terminal: false,
   });
 
   const ask = (message: string) =>
@@ -33,9 +35,12 @@ export async function promptText(
   initialValue?: string,
 ): Promise<string | null> {
   const prompt = initialValue
-    ? `${message} (${initialValue}): `
-    : `${message}: `;
-  const value = (await ask(prompt)).trim();
+    ? `${Style.info('?')} ${message} ${Style.muted(`(${initialValue})`)}: `
+    : `${Style.info('?')} ${message}: `;
+
+  process.stdout.write(prompt);
+  const value = (await ask('')).trim();
+
   if (!value && initialValue !== undefined) return initialValue;
   if (value.toLowerCase() === 'q') return null;
   return value;
@@ -43,30 +48,26 @@ export async function promptText(
 
 /**
  * Prompts for yes/no confirmation.
- * Returns null if user enters 'q' to quit.
  */
 export async function promptConfirm(
   ask: (message: string) => Promise<string>,
   message: string,
-  initialValue?: boolean,
+  initialValue: boolean = false,
 ): Promise<boolean | null> {
-  const suffix =
-    initialValue === undefined
-      ? ' (y/n): '
-      : initialValue
-        ? ' (Y/n): '
-        : ' (y/N): ';
-  const value = (await ask(`${message}${suffix}`)).trim().toLowerCase();
-  if (!value && initialValue !== undefined) return initialValue;
+  const suffix = initialValue ? ' (Y/n)' : ' (y/N)';
+  const prompt = `${Style.info('?')} ${message} ${Style.muted(suffix)}: `;
+
+  process.stdout.write(prompt);
+  const value = (await ask('')).trim().toLowerCase();
+
   if (value === 'q') return null;
   if (value === 'y' || value === 'yes') return true;
   if (value === 'n' || value === 'no') return false;
-  return initialValue ?? false;
+  return initialValue;
 }
 
 /**
  * Prompts for single selection from a list.
- * Returns null if user enters 'q' to quit.
  */
 export async function promptSelect(
   ask: (message: string) => Promise<string>,
@@ -74,59 +75,33 @@ export async function promptSelect(
   options: Array<{ value: string; label: string }>,
   initialValue?: string,
 ): Promise<string | null> {
-  console.log(message);
+  console.log(`\n${Style.title(message)}`);
   options.forEach((option, index) => {
-    console.log(`  ${index + 1}) ${option.label}`);
+    const prefix = `${index + 1}.`;
+    console.log(`  ${color(prefix, Colors.fg.green)} ${option.label}`);
   });
+  console.log(Style.muted('  q. Quit'));
+  console.log('');
+
   const initialIndex = initialValue
     ? options.findIndex((opt) => opt.value === initialValue) + 1
     : 0;
+
   const prompt = initialIndex
-    ? `Select (1-${options.length}) [${initialIndex}]: `
-    : `Select (1-${options.length}): `;
+    ? `${Style.info('?')} Select (1-${options.length}) ${Style.muted(`[${initialIndex}]`)}: `
+    : `${Style.info('?')} Select (1-${options.length}): `;
 
   while (true) {
-    const value = (await ask(prompt)).trim();
+    process.stdout.write(prompt);
+    const value = (await ask('')).trim();
+
     if (value.toLowerCase() === 'q') return null;
     if (!value && initialIndex) return options[initialIndex - 1].value;
+
     const num = Number(value);
     if (Number.isInteger(num) && num >= 1 && num <= options.length) {
       return options[num - 1].value;
     }
-  }
-}
-
-/**
- * Prompts for multiple selections from a list.
- * Returns null if user enters 'q' to quit.
- */
-export async function promptMultiSelect(
-  ask: (message: string) => Promise<string>,
-  message: string,
-  options: Array<{ value: string; label: string }>,
-  initialValues?: string[],
-): Promise<string[] | null> {
-  console.log(message);
-  options.forEach((option, index) => {
-    console.log(`  ${index + 1}) ${option.label}`);
-  });
-  const initial =
-    initialValues && initialValues.length > 0
-      ? ` [${initialValues.join(',')}]`
-      : '';
-  const prompt = `Select comma-separated numbers${initial}: `;
-
-  while (true) {
-    const value = (await ask(prompt)).trim();
-    if (value.toLowerCase() === 'q') return null;
-    if (!value && initialValues) return initialValues;
-    const selections = value
-      .split(',')
-      .map((item) => Number(item.trim()))
-      .filter((num) => Number.isInteger(num));
-    if (selections.length === 0) continue;
-    const unique = Array.from(new Set(selections));
-    if (unique.some((num) => num < 1 || num > options.length)) continue;
-    return unique.map((num) => options[num - 1].value);
+    console.log(Style.error('Invalid selection. Please try again.'));
   }
 }

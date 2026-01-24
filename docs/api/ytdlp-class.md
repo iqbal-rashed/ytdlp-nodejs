@@ -19,18 +19,55 @@ new YtDlp(options?: YtDlpOptions)
 
 ## Methods
 
-### `downloadAsync`
+### `download`
 
-Downloads a video asynchronously.
+Returns a fluent builder for downloading videos. Chain methods to configure and call `.run()` to execute.
 
 ```typescript
-downloadAsync(url: string, options?: FormatOptions): Promise<string>
+download(url: string, options?: FormatOptions): Download
+```
+
+#### Example
+
+```typescript
+const result = await ytdlp
+  .download('https://youtube.com/watch?v=...')
+  .format('mergevideo')
+  .quality('1080p')
+  .type('mp4')
+  .output('./downloads')
+  .embedThumbnail()
+  .on('progress', (p) => console.log(p.percentage_str))
+  .run();
+
+console.log('Files:', result.filePaths);
+```
+
+#### Builder Methods
+
+| Category      | Methods                                                 |
+| ------------- | ------------------------------------------------------- |
+| **Format**    | `.format()`, `.quality()`, `.type()`                    |
+| **Output**    | `.output()`, `.setOutputTemplate()`                     |
+| **Audio**     | `.extractAudio()`, `.audioFormat()`, `.audioQuality()`  |
+| **Embed**     | `.embedThumbnail()`, `.embedSubs()`, `.embedMetadata()` |
+| **Subtitles** | `.writeSubs()`, `.writeAutoSubs()`, `.subLangs()`       |
+| **Network**   | `.proxy()`, `.rateLimit()`, `.cookies()`                |
+| **Events**    | `.on('progress')`, `.on('error')`, `.on('finish')`      |
+| **Execute**   | `.run()` - returns `Promise<DownloadFinishResult>`      |
+
+### `downloadAsync`
+
+Downloads a video asynchronously with callback-style progress.
+
+```typescript
+downloadAsync(url: string, options?: FormatOptions): Promise<DownloadResult>
 ```
 
 #### Options extended properties:
 
 - `onProgress`: Callback for download progress.
-- `printPaths`: Return output file paths.
+- `format`: Format options object.
 - `output`: Custom output template.
 
 ### `stream`

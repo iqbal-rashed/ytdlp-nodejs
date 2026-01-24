@@ -3,442 +3,229 @@
  * Provides interactive TUI flows for various CLI actions.
  */
 
-import { ArgsOptions, FormatOptions, VideoInfo, VideoFormat } from '../types';
-import { YtDlp } from '..';
-import { CliConfig, loadConfig, updateConfig } from '../configs/config';
 import {
-  createPrompter,
-  promptConfirm,
-  promptMultiSelect,
-  promptSelect,
-  promptText,
-} from './prompts';
-import { applyConfigDefaults, formatTableRows, progressHandler } from './utils';
+  ArgsOptions,
+  FormatOptions,
+  AudioFormat,
+  VideoInfo,
+  PlaylistInfo,
+} from '../types';
+import { YtDlp } from '..';
+import { createPrompter, promptSelect, promptText } from './prompts';
+import { buildArgsOptions, progressHandler } from './utils';
+import { Colors, Style, color } from './style';
+
+/**
+ * Ask for extra `exec` arguments (custom flags).
+ */
+async function promptExecArgs(
+  ask: (message: string) => Promise<string>,
+): Promise<string[]> {
+  const extra = await promptText(
+    ask,
+    'Extra args (e.g. --embed-subs) [Enter to skip]',
+  );
+  if (!extra) return [];
+  return extra
+    .split(' ')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 /**
  * Interactive video download flow.
  */
 export async function interactiveDownload(
   ytdlp: YtDlp,
-  config: CliConfig,
-  audioOnly?: boolean,
+  audioOnly: boolean = false,
+  prefilledUrl?: string,
 ): Promise<void> {
   const { ask, close } = createPrompter();
   try {
-    const url = await promptText(ask, 'Video URL');
+    const url = prefilledUrl || (await promptText(ask, 'Video URL'));
     if (!url) return;
 
-    let formatChoice: string | FormatOptions<'audioonly'>['format'] | undefined;
+    let format: string | undefined;
+    let type: AudioFormat | undefined;
 
     if (audioOnly) {
-      formatChoice = {
-        filter: 'audioonly',
-        type: 'mp3',
-        quality: 5,
-      };
-    } else {
-      const formatMode = await promptSelect(ask, 'Format', [
-        { value: 'best', label: 'Best available' },
-        { value: 'worst', label: 'Worst available' },
-        { value: 'audio-only', label: 'Audio only' },
-        { value: 'picker', label: 'Pick from list' },
-        { value: 'custom', label: 'Custom format string' },
+      const audioChoice = await promptSelect(ask, 'Audio Format/Quality', [
+        { value: 'mp3', label: 'MP3 (Best compatibility)' },
+        { value: 'm4a', label: 'M4A (Better quality)' },
+        { value: 'wav', label: 'WAV (Uncompressed)' },
+        { value: 'best', label: 'Best Quality (Auto)' },
       ]);
-      if (!formatMode) return;
-
-      if (formatMode === 'best' || formatMode === 'worst') {
-        formatChoice = formatMode;
-      }
-      if (formatMode === 'audio-only') {
-        formatChoice = {
-          filter: 'audioonly',
-          type: 'mp3',
-          quality: 5,
-        };
-      }
-      if (formatMode === 'custom') {
-        const custom = await promptText(ask, 'yt-dlp format string');
-        if (!custom) return;
-        formatChoice = String(custom);
-      }
-      if (formatMode === 'picker') {
-        const result = await ytdlp.getFormatsAsync(String(url));
-        let formatOptions: { value: string; label: string }[] = [];
-        if (result.source === 'json' && result.formats) {
-          formatOptions = result.formats.map((f: VideoFormat) => ({
-            value: f.format_id,
-            label:
-              `${f.format_id} ${f.ext || ''} ${f.resolution || ''} ${f.format_note || ''}`.trim(),
-          }));
-        }
-        const selection = await promptSelect(
-          ask,
-          'Pick a format',
-          formatOptions,
-        );
-        if (!selection) return;
-        formatChoice = String(selection);
-      }
-    }
-
-    const options: ArgsOptions = {};
-    applyConfigDefaults(options, config);
-
-    const shouldPrintPaths = await promptConfirm(
-      ask,
-      'Return output file paths after download?',
-      true,
-    );
-    if (shouldPrintPaths === null) return;
-
-    const runProgress = await promptConfirm(ask, 'Show progress', true);
-    if (runProgress === null) return;
-
-    const formatOptions: FormatOptions<'audioonly'> = {
-      ...options,
-      format: formatChoice,
-      onProgress: runProgress ? progressHandler('Downloading') : undefined,
-      printPaths: Boolean(shouldPrintPaths),
-      onPaths: shouldPrintPaths
-        ? (paths) => {
-            if (runProgress) process.stdout.write('\n');
-            console.log(paths.join('\n'));
-          }
-        : undefined,
-    };
-
-    await ytdlp.downloadAsync(String(url), formatOptions);
-    if (!shouldPrintPaths && runProgress) process.stdout.write('\n');
-  } finally {
-    close();
-  }
-}
-
-/**
- * Interactive video info flow.
- */
-export async function interactiveInfo(ytdlp: YtDlp): Promise<void> {
-  const { ask, close } = createPrompter();
-  try {
-    const url = await promptText(ask, 'Video URL');
-    if (!url) return;
-    const info = await ytdlp.getInfoAsync(String(url));
-    console.log(JSON.stringify(info, null, 2));
-  } finally {
-    close();
-  }
-}
-
-/**
- * Interactive formats listing flow.
- */
-export async function interactiveFormats(ytdlp: YtDlp): Promise<void> {
-  const { ask, close } = createPrompter();
-  try {
-    const url = await promptText(ask, 'Video URL');
-    if (!url) return;
-    const result = await ytdlp.getFormatsAsync(String(url));
-    if (result.source === 'json' && result.formats) {
-      const rows = result.formats.map((f: VideoFormat) => ({
-        formatId: f.format_id,
-        extension: f.ext || '',
-        resolution: f.resolution || '',
-        note: f.format_note || '',
-        raw: '',
-      }));
-      console.log(formatTableRows(rows));
+      if (!audioChoice) return;
+      type = audioChoice === 'best' ? undefined : (audioChoice as AudioFormat);
     } else {
-      console.log('No formats found');
-    }
-  } finally {
-    close();
-  }
-}
+      const qualityChoice = await promptSelect(ask, 'Video Quality', [
+        { value: 'best', label: 'Best Available' },
+        { value: '2160', label: '4K (2160p)' },
+        { value: '1440', label: '2K (1440p)' },
+        { value: '1080', label: 'Full HD (1080p)' },
+        { value: '720', label: 'HD (720p)' },
+        { value: '480', label: 'SD (480p)' },
+        { value: 'worst', label: 'Smallest File' },
+      ]);
+      if (!qualityChoice) return;
 
-/**
- * Interactive direct URLs flow.
- */
-export async function interactiveUrls(ytdlp: YtDlp): Promise<void> {
-  const { ask, close } = createPrompter();
-  try {
-    const url = await promptText(ask, 'Video URL');
-    if (!url) return;
-    const urls = await ytdlp.getDirectUrlsAsync(String(url));
-    console.log(urls.join('\n'));
-  } finally {
-    close();
-  }
-}
-
-/**
- * Interactive subtitles download flow.
- */
-export async function interactiveSubtitles(
-  ytdlp: YtDlp,
-  config: CliConfig,
-): Promise<void> {
-  const { ask, close } = createPrompter();
-  try {
-    const url = await promptText(ask, 'Video URL');
-    if (!url) return;
-
-    let languages: string[] = [];
-    try {
-      const info = (await ytdlp.getInfoAsync(String(url))) as VideoInfo;
-      languages = [
-        ...Object.keys(info.subtitles || {}),
-        ...Object.keys(info.automatic_captions || {}),
-      ];
-    } catch {
-      languages = [];
+      if (qualityChoice === 'best') format = 'best';
+      else if (qualityChoice === 'worst') format = 'worst';
+      else
+        format = `bestvideo[height<=${qualityChoice}]+bestaudio/best[height<=${qualityChoice}]`;
     }
 
-    const selectedLanguages = await promptMultiSelect(
-      ask,
-      'Subtitle languages',
-      languages.length > 0
-        ? languages.map((lang) => ({ value: lang, label: lang }))
-        : [{ value: 'en', label: 'en' }],
-    );
-    if (!selectedLanguages) return;
+    const execArgs = await promptExecArgs(ask);
 
-    const format = await promptSelect(ask, 'Subtitle format', [
-      { value: 'vtt', label: 'vtt' },
-      { value: 'srt', label: 'srt' },
-      { value: 'ass', label: 'ass' },
-    ]);
-    if (!format) return;
+    console.log(`\n${Style.info('Starting download...')}\n`);
 
-    const embed = await promptConfirm(
-      ask,
-      'Embed subtitles',
-      config.subtitles?.embed ?? false,
-    );
-    if (embed === null) return;
+    const options: ArgsOptions = buildArgsOptions({});
+    if (execArgs.length > 0) {
+      options.rawArgs = execArgs;
+    }
 
-    const includeAuto = await promptConfirm(
-      ask,
-      'Include auto subtitles',
-      config.subtitles?.auto ?? false,
-    );
-    if (includeAuto === null) return;
+    if (audioOnly) {
+      // For audio, we use simpler args logic for now or custom logic
+      // But since we removed config, we just use raw args or helpers
+      // We will use the library's fluent or helper methods ideally, but here we use downloadAsync for flexibility
 
-    const options: ArgsOptions = {
-      writeSubs: true,
-      writeAutoSubs: Boolean(includeAuto),
-      subLangs: selectedLanguages as string[],
-      subFormat: String(format),
-      embedSubs: Boolean(embed),
-      skipDownload: true,
-    };
-    applyConfigDefaults(options, config);
+      // Construct audio-specific format options
+      const formatOptions: FormatOptions<'audioonly'> = {
+        ...options,
+        format: {
+          filter: 'audioonly',
+          type: type || 'mp3',
+          quality: 0, // Best
+        },
+        onProgress: progressHandler('Downloading Audio'),
+      };
+      const result = await ytdlp.downloadAsync(url, formatOptions);
+      console.log(`\n\n${Style.success('Download Complete!')}`);
+      if (result.filePaths.length)
+        console.log(result.filePaths.map((p) => ` - ${p}`).join('\n'));
+    } else {
+      const formatOptions: FormatOptions<'videoonly'> = {
+        ...options,
+        format: format,
+        mergeOutputFormat: 'mp4',
+        onProgress: progressHandler('Downloading Video'),
+      };
 
-    await ytdlp.execAsync(String(url), options);
+      const result = await ytdlp.downloadAsync(url, formatOptions);
+      console.log(`\n\n${Style.success('Download Complete!')}`);
+      if (result.filePaths.length)
+        console.log(result.filePaths.map((p) => ` - ${p}`).join('\n'));
+    }
+  } catch (err) {
+    console.error(`\n${Style.error('Error occurred:')} ${err}`);
   } finally {
     close();
   }
 }
 
 /**
- * Interactive SponsorBlock download flow.
+ * Formats and prints video info.
  */
-export async function interactiveSponsorblock(
-  ytdlp: YtDlp,
-  config: CliConfig,
-): Promise<void> {
-  const { ask, close } = createPrompter();
-  try {
-    const url = await promptText(ask, 'Video URL');
-    if (!url) return;
-
-    const categories = await promptMultiSelect(
-      ask,
-      'SponsorBlock categories',
-      [
-        { value: 'sponsor', label: 'sponsor' },
-        { value: 'intro', label: 'intro' },
-        { value: 'outro', label: 'outro' },
-        { value: 'selfpromo', label: 'selfpromo' },
-        { value: 'interaction', label: 'interaction' },
-        { value: 'preview', label: 'preview' },
-        { value: 'filler', label: 'filler' },
-      ],
-      config.sponsorblock?.categories,
-    );
-    if (!categories) return;
-
-    const mode = await promptSelect(
-      ask,
-      'SponsorBlock mode',
-      [
-        { value: 'mark', label: 'Mark as chapters' },
-        { value: 'remove', label: 'Remove/cut' },
-      ],
-      config.sponsorblock?.mode ?? 'remove',
-    );
-    if (!mode) return;
-
-    const options: ArgsOptions = {};
-    applyConfigDefaults(options, config);
-    if (mode === 'mark') options.sponsorblockMark = categories as string[];
-    if (mode === 'remove') options.sponsorblockRemove = categories as string[];
-
-    await ytdlp.downloadAsync(String(url), options);
-  } finally {
-    close();
-  }
-}
-
-/**
- * Interactive sections/time range download flow.
- */
-export async function interactiveSections(
-  ytdlp: YtDlp,
-  config: CliConfig,
-): Promise<void> {
-  const { ask, close } = createPrompter();
-  try {
-    const url = await promptText(ask, 'Video URL');
-    if (!url) return;
-
-    const sections = await promptText(
-      ask,
-      'Section range (e.g. *10:15-20:00 or chapter:Intro)',
-    );
-    if (!sections) return;
-
-    const splitChapters = await promptConfirm(ask, 'Split chapters', false);
-    if (splitChapters === null) return;
-
-    const options: ArgsOptions = {
-      downloadSections: String(sections),
-      splitChapters: Boolean(splitChapters),
-    };
-    applyConfigDefaults(options, config);
-    await ytdlp.downloadAsync(String(url), options);
-  } finally {
-    close();
-  }
-}
-
-/**
- * Interactive yt-dlp update flow.
- */
-export async function interactiveUpdate(ytdlp: YtDlp): Promise<void> {
-  const result = await ytdlp.updateYtDlpAsync();
+function printVideoInfo(info: VideoInfo) {
+  console.log(`\n${Style.title('Video Information')}`);
+  console.log(`  ${color('Title:', Colors.fg.cyan)}       ${info.title}`);
   console.log(
-    `Updated via ${result.method}. Binary: ${result.binaryPath}${
-      result.version ? ` (version ${result.version})` : ''
-    }`,
+    `  ${color('Uploader:', Colors.fg.cyan)}    ${info.uploader} ${Style.muted(`(${info.uploader_id})`)}`,
   );
+  console.log(
+    `  ${color('Channel:', Colors.fg.cyan)}     ${info.channel} ${info.channel_follower_count ? Style.muted(`(${info.channel_follower_count.toLocaleString()} subs)`) : ''}`,
+  );
+  console.log(
+    `  ${color('Duration:', Colors.fg.cyan)}    ${info.duration_string || info.duration + 's'}`,
+  );
+  console.log(
+    `  ${color('Views:', Colors.fg.cyan)}       ${info.view_count?.toLocaleString()}`,
+  );
+
+  if (info.like_count) {
+    console.log(
+      `  ${color('Likes:', Colors.fg.cyan)}       ${info.like_count.toLocaleString()}`,
+    );
+  }
+  if (info.comment_count) {
+    console.log(
+      `  ${color('Comments:', Colors.fg.cyan)}    ${info.comment_count.toLocaleString()}`,
+    );
+  }
+
+  console.log(
+    `  ${color('Resolution:', Colors.fg.cyan)}  ${info.resolution || info.width + 'x' + info.height} ${info.fps ? `(${info.fps}fps)` : ''}`,
+  );
+  console.log(`  ${color('Date:', Colors.fg.cyan)}        ${info.upload_date}`);
+  console.log(`  ${color('URL:', Colors.fg.cyan)}         ${info.webpage_url}`);
+
+  if (info.tags && info.tags.length > 0) {
+    const tags =
+      info.tags.slice(0, 5).join(', ') + (info.tags.length > 5 ? '...' : '');
+    console.log(
+      `  ${color('Tags:', Colors.fg.cyan)}        ${Style.muted(tags)}`,
+    );
+  }
+
+  if (info.description) {
+    const desc =
+      info.description.split('\n')[0].substring(0, 100) +
+      (info.description.length > 100 ? '...' : '');
+    console.log(
+      `  ${color('Description:', Colors.fg.cyan)} ${Style.muted(desc)}`,
+    );
+  }
 }
 
 /**
- * Interactive settings configuration flow.
+ * Formats and prints playlist info.
  */
-export async function interactiveSettings(config: CliConfig): Promise<void> {
+function printPlaylistInfo(info: PlaylistInfo) {
+  console.log(`\n${Style.title('Playlist Information')}`);
+  console.log(`  ${color('Title:', Colors.fg.cyan)}       ${info.title}`);
+  console.log(
+    `  ${color('Count:', Colors.fg.cyan)}       ${info.playlist_count} videos`,
+  );
+  console.log(`  ${color('URL:', Colors.fg.cyan)}         ${info.webpage_url}`);
+
+  if (info.entries && info.entries.length > 0) {
+    console.log(`\n${Style.info('First 5 entries:')}`);
+    info.entries.slice(0, 5).forEach((entry, i) => {
+      console.log(
+        `  ${i + 1}. ${entry.title} ${Style.muted(`(${entry.duration_string || 'N/A'})`)}`,
+      );
+    });
+    if (info.entries.length > 5) {
+      console.log(`  ... and ${info.entries.length - 5} more`);
+    }
+  }
+}
+
+/**
+ * Interactive Info Flow
+ */
+export async function interactiveInfo(
+  ytdlp: YtDlp,
+  prefilledUrl?: string,
+): Promise<void> {
   const { ask, close } = createPrompter();
   try {
-    const downloadDir = await promptText(
-      ask,
-      'Default download directory',
-      config.downloadDir ?? '',
-    );
-    if (downloadDir === null) return;
+    const url = prefilledUrl || (await promptText(ask, 'Video URL'));
+    if (!url) return;
 
-    const defaultFormat = await promptText(
-      ask,
-      'Default format',
-      config.defaultFormat ?? '',
-    );
-    if (defaultFormat === null) return;
+    console.log(Style.info('Fetching info...'));
+    // Force type to 'video' mostly, but we handle playlist response
+    // types.ts says getInfoAsync returns Union, checking _type separates them.
+    const info = (await ytdlp.getInfoAsync(url)) as VideoInfo | PlaylistInfo;
 
-    const subLangs = await promptText(
-      ask,
-      'Subtitle languages (comma-separated)',
-      (config.subtitles?.languages || []).join(','),
-    );
-    if (subLangs === null) return;
-
-    const subFormat = await promptText(
-      ask,
-      'Subtitle format',
-      config.subtitles?.format ?? 'vtt',
-    );
-    if (subFormat === null) return;
-
-    const embedSubs = await promptConfirm(
-      ask,
-      'Embed subtitles',
-      config.subtitles?.embed ?? false,
-    );
-    if (embedSubs === null) return;
-
-    const sponsorCategories = await promptText(
-      ask,
-      'SponsorBlock categories (comma-separated)',
-      (config.sponsorblock?.categories || []).join(','),
-    );
-    if (sponsorCategories === null) return;
-
-    const sponsorMode = await promptSelect(
-      ask,
-      'SponsorBlock mode',
-      [
-        { value: 'mark', label: 'Mark as chapters' },
-        { value: 'remove', label: 'Remove/cut' },
-      ],
-      config.sponsorblock?.mode ?? 'remove',
-    );
-    if (!sponsorMode) return;
-
-    const proxy = await promptText(ask, 'Proxy', config.proxy ?? '');
-    if (proxy === null) return;
-
-    const cookiesPath = await promptText(
-      ask,
-      'Cookies file path',
-      config.cookiesPath ?? '',
-    );
-    if (cookiesPath === null) return;
-
-    const concurrency = await promptText(
-      ask,
-      'Concurrent fragments',
-      config.concurrency?.toString() ?? '',
-    );
-    if (concurrency === null) return;
-
-    const verbose = await promptConfirm(
-      ask,
-      'Verbose logging',
-      config.verbose ?? false,
-    );
-    if (verbose === null) return;
-
-    await updateConfig({
-      downloadDir: String(downloadDir) || undefined,
-      defaultFormat: String(defaultFormat) || undefined,
-      subtitles: {
-        languages: String(subLangs)
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean),
-        format: String(subFormat) || undefined,
-        embed: Boolean(embedSubs),
-      },
-      sponsorblock: {
-        categories: String(sponsorCategories)
-          .split(',')
-          .map((v) => v.trim())
-          .filter(Boolean),
-        mode: sponsorMode as 'mark' | 'remove',
-      },
-      proxy: String(proxy) || undefined,
-      cookiesPath: String(cookiesPath) || undefined,
-      concurrency: Number(concurrency) || undefined,
-      verbose: Boolean(verbose),
-    });
+    if (info._type === 'playlist') {
+      printPlaylistInfo(info as PlaylistInfo);
+    } else {
+      printVideoInfo(info as VideoInfo);
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`\n${Style.error('Error:')} ${message}`);
   } finally {
     close();
   }
@@ -449,63 +236,62 @@ export async function interactiveSettings(config: CliConfig): Promise<void> {
  */
 export async function runInteractive(): Promise<void> {
   const ytdlp = new YtDlp();
-  const config = await loadConfig();
 
-  console.log('ytdlp-nodejs');
+  console.clear();
+  console.log(
+    color(
+      `
+__   __ _____  ____   _      ____  
+\\ \\ / /|_   _||  _ \\ | |    |  _ \\ 
+ \\ V /   | |  | | | || |    | |_) |
+  | |    | |  | |_| || |___ |  __/ 
+  |_|    |_|  |____/ |_____||_|    
+`,
+      Colors.fg.red,
+    ),
+  );
+  console.log(Style.muted('  Powerful yt-dlp wrapper for Node.js\n'));
+
   const { ask, close } = createPrompter();
   try {
-    const action = await promptSelect(ask, 'Choose an action', [
-      { value: 'download', label: 'Download video' },
-      { value: 'audio', label: 'Download audio only' },
-      { value: 'info', label: 'Get info (JSON summary)' },
-      { value: 'formats', label: 'List formats' },
-      { value: 'urls', label: 'Get direct URLs' },
-      { value: 'subs', label: 'Subtitles flow' },
-      { value: 'sponsorblock', label: 'SponsorBlock flow' },
-      { value: 'sections', label: 'Download sections/time range' },
-      { value: 'update', label: 'Update yt-dlp' },
-      { value: 'settings', label: 'Settings' },
+    const action = await promptSelect(ask, 'Choose Action', [
+      { value: 'download', label: 'Download Video' },
+      { value: 'audio', label: 'Download Audio Only' },
+      { value: 'info', label: 'Get Video Info' },
+      { value: 'update', label: 'Update yt-dlp Binary' },
+      { value: 'ffmpeg', label: 'Download FFmpeg' },
     ]);
 
-    if (!action) return;
-
-    switch (action) {
-      case 'download':
-        await interactiveDownload(ytdlp, config);
-        break;
-      case 'audio':
-        await interactiveDownload(ytdlp, config, true);
-        break;
-      case 'info':
-        await interactiveInfo(ytdlp);
-        break;
-      case 'formats':
-        await interactiveFormats(ytdlp);
-        break;
-      case 'urls':
-        await interactiveUrls(ytdlp);
-        break;
-      case 'subs':
-        await interactiveSubtitles(ytdlp, config);
-        break;
-      case 'sponsorblock':
-        await interactiveSponsorblock(ytdlp, config);
-        break;
-      case 'sections':
-        await interactiveSections(ytdlp, config);
-        break;
-      case 'update':
-        await interactiveUpdate(ytdlp);
-        break;
-      case 'settings':
-        await interactiveSettings(config);
-        break;
-      default:
-        break;
+    if (action) {
+      switch (action) {
+        case 'download':
+          await interactiveDownload(ytdlp, false);
+          break;
+        case 'audio':
+          await interactiveDownload(ytdlp, true);
+          break;
+        case 'info':
+          await interactiveInfo(ytdlp);
+          break;
+        case 'update': {
+          console.log(Style.info('Updating yt-dlp...'));
+          const res = await ytdlp.updateYtDlpAsync();
+          console.log(Style.success(`Updated to ${res.version || 'latest'}`));
+          break;
+        }
+        case 'ffmpeg': {
+          console.log(Style.info('Downloading FFmpeg...'));
+          const path = await ytdlp.downloadFFmpeg();
+          if (path) {
+            console.log(Style.success(`FFmpeg available at: ${path}`));
+          } else {
+            console.log(Style.error('Failed to download FFmpeg.'));
+          }
+          break;
+        }
+      }
     }
   } finally {
     close();
   }
-
-  console.log('Done');
 }

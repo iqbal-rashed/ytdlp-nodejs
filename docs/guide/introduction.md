@@ -12,7 +12,8 @@
 
 ## Key Features
 
-- **Download**: Save videos and audio to disk with a single function call.
+- **Fluent API**: Chain methods like FFmpeg for intuitive, readable code.
+- **Download**: Save videos and audio to disk with progress tracking.
 - **Stream**: Pipe video/audio data directly to other streams (e.g., Express responses, file streams).
 - **Metadata**: Fetch detailed video info, formats, and playlists as typed objects.
 - **CLI**: Interactive terminal interface for quick manual downloads.

@@ -211,26 +211,25 @@ export type TypeOptions = {
 
 export type FormatKeyWord = keyof QualityOptions;
 
+export type FormatArgs<F extends FormatKeyWord> =
+  | {
+      filter: F;
+      quality?: QualityOptions[F];
+      type?: TypeOptions[F];
+    }
+  | string;
+
 export interface FormatOptions<F extends FormatKeyWord> extends Omit<
   ArgsOptions,
   'format' | 'progressTemplate'
 > {
-  format?:
-    | {
-        filter: F;
-        quality?: QualityOptions[F];
-        type?: TypeOptions[F];
-      }
-    | string;
+  format?: FormatArgs<F>;
   onProgress?: (p: VideoProgress) => void;
   /**
-   * When true, adds `--print after_move:filepath` to capture final output paths.
+   * Callback fired with video info before download starts.
+   * Uses yt-dlp's `before_dl` print hook.
    */
-  printPaths?: boolean;
-  /**
-   * Callback fired with final output paths when `printPaths` is enabled.
-   */
-  onPaths?: (paths: string[]) => void;
+  beforeDownload?: (info: DownloadedVideoInfo) => void;
 }
 
 export type PipeResponse = {
@@ -476,9 +475,109 @@ export interface DownloadResult {
   /** Raw command output */
   output: string;
   /** Downloaded video/audio file path */
-  filePath: string;
+  filePaths: string[];
   /** Video information after download (including post-processing) */
-  info?: DownloadedVideoInfo;
+  info?: DownloadedVideoInfo[];
+}
+
+/**
+ * Result emitted by the 'finish' event on DownloadProcess.
+ */
+export interface DownloadFinishResult {
+  /** Raw command output */
+  output: string;
+  /** Downloaded video/audio file paths */
+  filePaths: string[];
+  /** Video information after download (including post-processing) */
+  info: DownloadedVideoInfo[];
+  /** Stderr output */
+  stderr: string;
+}
+
+/**
+ * Event map for DownloadProcess events.
+ */
+export interface DownloadProcessEvents {
+  progress: [progress: VideoProgress];
+  finish: [result: DownloadFinishResult];
+  close: [code: number | null, signal: NodeJS.Signals | null];
+  disconnect: [];
+  error: [err: Error];
+  exit: [code: number | null, signal: NodeJS.Signals | null];
+  message: [message: unknown, sendHandle: unknown];
+  spawn: [];
+}
+
+/**
+ * Typed ChildProcess for download operations with progress and finish events.
+ * Returned by YtDlp.download() method.
+ */
+export interface DownloadProcess {
+  /** Adds a listener for the specified event. */
+  on<K extends keyof DownloadProcessEvents>(
+    event: K,
+    listener: (...args: DownloadProcessEvents[K]) => void,
+  ): this;
+  /** Adds a one-time listener for the specified event. */
+  once<K extends keyof DownloadProcessEvents>(
+    event: K,
+    listener: (...args: DownloadProcessEvents[K]) => void,
+  ): this;
+  /** Removes a listener for the specified event. */
+  off<K extends keyof DownloadProcessEvents>(
+    event: K,
+    listener: (...args: DownloadProcessEvents[K]) => void,
+  ): this;
+  /** Removes a listener for the specified event. */
+  removeListener<K extends keyof DownloadProcessEvents>(
+    event: K,
+    listener: (...args: DownloadProcessEvents[K]) => void,
+  ): this;
+  /** Adds a listener to the beginning of the listeners array. */
+  prependListener<K extends keyof DownloadProcessEvents>(
+    event: K,
+    listener: (...args: DownloadProcessEvents[K]) => void,
+  ): this;
+  /** Adds a one-time listener to the beginning of the listeners array. */
+  prependOnceListener<K extends keyof DownloadProcessEvents>(
+    event: K,
+    listener: (...args: DownloadProcessEvents[K]) => void,
+  ): this;
+  /** Emits an event with the specified arguments. */
+  emit<K extends keyof DownloadProcessEvents>(
+    event: K,
+    ...args: DownloadProcessEvents[K]
+  ): boolean;
+  /** Returns the number of listeners for the specified event. */
+  listenerCount(event: keyof DownloadProcessEvents): number;
+  /** Returns a copy of the array of listeners for the specified event. */
+  listeners(
+    event: keyof DownloadProcessEvents,
+  ): ((...args: unknown[]) => void)[];
+  /** Removes all listeners, or those of the specified event. */
+  removeAllListeners(event?: keyof DownloadProcessEvents): this;
+  /** Kills the child process. */
+  kill(signal?: NodeJS.Signals | number): boolean;
+  /** The process identifier (PID) of the child process. */
+  readonly pid: number | undefined;
+  /** Whether the process is connected. */
+  readonly connected: boolean;
+  /** Standard input stream. */
+  readonly stdin: import('stream').Writable | null;
+  /** Standard output stream. */
+  readonly stdout: import('stream').Readable | null;
+  /** Standard error stream. */
+  readonly stderr: import('stream').Readable | null;
+  /** Exit code of the child process. */
+  readonly exitCode: number | null;
+  /** Signal that terminated the process. */
+  readonly signalCode: NodeJS.Signals | null;
+  /** Whether the child process was spawned successfully. */
+  readonly spawnfile: string;
+  /** Arguments used to spawn the child process. */
+  readonly spawnargs: string[];
+  /** Whether the process has been killed. */
+  readonly killed: boolean;
 }
 
 /**
@@ -489,4 +588,11 @@ export interface SubtitleInfo {
   languages: string[];
   ext: string;
   autoCaption: boolean;
+}
+
+export interface YtDlpContext {
+  /** Path to the yt-dlp binary */
+  binaryPath: string;
+  /** Optional path to the FFmpeg binary */
+  ffmpegPath?: string;
 }

@@ -1,12 +1,12 @@
 /**
  * CLI Utilities
- * Provides argument parsing, formatting, and config helpers.
+ * Provides argument parsing, formatting, and helper functions.
  */
 
 import fs from 'fs';
 import path from 'path';
-import { ArgsOptions, FormatOptions, FormatTableRow } from '../types';
-import { CliConfig } from '../configs/config';
+import { ArgsOptions, FormatTableRow } from '../types';
+import { Colors, Style, color } from './style';
 
 export type CliOptionValue = string | boolean | string[];
 
@@ -114,28 +114,32 @@ export function parseCliArgs(argv: string[]): {
  * Formats format table rows for display.
  */
 export function formatTableRows(rows: FormatTableRow[]): string {
-  if (rows.length === 0) return 'No formats found.';
-  const headers = ['format', 'ext', 'resolution', 'note'];
+  if (rows.length === 0) return Style.warning('No formats found.');
+  const headers = ['ID', 'Ext', 'Resolution', 'Note'];
   const columns = [
     Math.max(headers[0].length, ...rows.map((r) => r.formatId.length)),
     Math.max(headers[1].length, ...rows.map((r) => r.extension.length)),
     Math.max(headers[2].length, ...rows.map((r) => r.resolution.length)),
   ];
 
+  const headerLine = [
+    color(headers[0].padEnd(columns[0]), Colors.fg.cyan),
+    color(headers[1].padEnd(columns[1]), Colors.fg.cyan),
+    color(headers[2].padEnd(columns[2]), Colors.fg.cyan),
+    color(headers[3], Colors.fg.cyan),
+  ].join('  ');
+
   const lines = [
-    `${headers[0].padEnd(columns[0])}  ${headers[1].padEnd(
-      columns[1],
-    )}  ${headers[2].padEnd(columns[2])}  ${headers[3]}`,
-    `${'-'.repeat(columns[0])}  ${'-'.repeat(columns[1])}  ${'-'.repeat(
-      columns[2],
-    )}  ${'-'.repeat(headers[3].length)}`,
+    headerLine,
+    color(
+      `${'-'.repeat(columns[0])}  ${'-'.repeat(columns[1])}  ${'-'.repeat(columns[2])}  ${'-'.repeat(headers[3].length)}`,
+      Colors.dim,
+    ),
   ];
 
   for (const row of rows) {
     lines.push(
-      `${row.formatId.padEnd(columns[0])}  ${row.extension.padEnd(
-        columns[1],
-      )}  ${row.resolution.padEnd(columns[2])}  ${row.note}`,
+      `${color(row.formatId.padEnd(columns[0]), Colors.fg.yellow)}  ${row.extension.padEnd(columns[1])}  ${row.resolution.padEnd(columns[2])}  ${row.note}`,
     );
   }
 
@@ -143,43 +147,10 @@ export function formatTableRows(rows: FormatTableRow[]): string {
 }
 
 /**
- * Creates output template from download directory.
- */
-export function outputTemplate(downloadDir?: string): string | undefined {
-  if (!downloadDir) return undefined;
-  return path.join(downloadDir, '%(title)s.%(ext)s');
-}
-
-/**
- * Applies config defaults to args options.
- */
-export function applyConfigDefaults(
-  options: ArgsOptions,
-  config: CliConfig,
-): void {
-  if (config.proxy && !options.proxy) {
-    options.proxy = config.proxy;
-  }
-  if (config.cookiesPath && !options.cookies) {
-    options.cookies = config.cookiesPath;
-  }
-  if (config.concurrency && !options.concurrentFragments) {
-    options.concurrentFragments = config.concurrency;
-  }
-  if (config.verbose && !options.verbose) {
-    options.verbose = true;
-  }
-  if (config.downloadDir && !options.output) {
-    options.output = outputTemplate(config.downloadDir);
-  }
-}
-
-/**
  * Builds ArgsOptions from CLI options.
  */
 export function buildArgsOptions(
   cliOptions: Record<string, CliOptionValue>,
-  config: CliConfig,
 ): ArgsOptions {
   const options: ArgsOptions = {};
 
@@ -210,82 +181,9 @@ export function buildArgsOptions(
   if (cliOptions.raw) options.rawArgs = cliOptions.raw as string[];
   if (cliOptions.verbose) options.verbose = true;
 
-  applyConfigDefaults(options, config);
+  // Exec options handled separately or injected here if needed
+
   return options;
-}
-
-/**
- * Resolves format option from CLI args and config.
- */
-export function resolveFormatOption(
-  cliOptions: Record<string, CliOptionValue>,
-  config: CliConfig,
-): FormatOptions<'audioonly'>['format'] | string | undefined {
-  if (cliOptions.format) return String(cliOptions.format);
-  if (cliOptions.audioOnly) {
-    return {
-      filter: 'audioonly',
-      type: cliOptions.audioFormat ? String(cliOptions.audioFormat) : 'mp3',
-      quality: cliOptions.audioQuality ? Number(cliOptions.audioQuality) : 5,
-    } as FormatOptions<'audioonly'>['format'];
-  }
-  return config.defaultFormat;
-}
-
-/**
- * Applies subtitle options to args.
- */
-export function applySubtitleOptions(
-  options: ArgsOptions,
-  cliOptions: Record<string, CliOptionValue>,
-  config: CliConfig,
-): void {
-  const langs = cliOptions.subLangs
-    ? String(cliOptions.subLangs)
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean)
-    : config.subtitles?.languages;
-  if (langs && langs.length > 0) {
-    options.subLangs = langs;
-  }
-  if (cliOptions.subFormat) {
-    options.subFormat = String(cliOptions.subFormat);
-  } else if (config.subtitles?.format) {
-    options.subFormat = config.subtitles.format;
-  }
-  if (cliOptions.writeSubs) options.writeSubs = true;
-  if (cliOptions.writeAutoSubs) options.writeAutoSubs = true;
-  if (cliOptions.embedSubs) options.embedSubs = true;
-  if (config.subtitles?.embed && !options.embedSubs) {
-    options.embedSubs = true;
-  }
-  if (config.subtitles?.auto && !options.writeAutoSubs) {
-    options.writeAutoSubs = true;
-  }
-}
-
-/**
- * Applies SponsorBlock options to args.
- */
-export function applySponsorblockOptions(
-  options: ArgsOptions,
-  cliOptions: Record<string, CliOptionValue>,
-  config: CliConfig,
-): void {
-  const categories = cliOptions.sponsorblockCategories
-    ? String(cliOptions.sponsorblockCategories)
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean)
-    : config.sponsorblock?.categories;
-  const mode = cliOptions.sponsorblockMode
-    ? String(cliOptions.sponsorblockMode)
-    : config.sponsorblock?.mode;
-  if (categories && categories.length > 0) {
-    if (mode === 'mark') options.sponsorblockMark = categories;
-    if (mode === 'remove') options.sponsorblockRemove = categories;
-  }
 }
 
 /**
@@ -293,9 +191,12 @@ export function applySponsorblockOptions(
  */
 export function progressHandler(
   prefix: string,
-): (progress: { percentage_str: string }) => void {
+): (progress: { percentage_str?: string }) => void {
   return (progress) => {
-    process.stdout.write(`${prefix} ${progress.percentage_str}\r`);
+    const pct = progress.percentage_str ?? 'N/A';
+    process.stdout.write(
+      `\x1b[2K\r${Style.info(prefix)} ${Style.success(pct)}`,
+    );
   };
 }
 
@@ -303,18 +204,20 @@ export function progressHandler(
  * Prints CLI usage help.
  */
 export function printUsage(): void {
-  console.log(`ytdlp-nodejs ${getPackageVersion()}
+  console.log(`
+${Style.title(`ytdlp ${getPackageVersion()}`)}
 
-Usage:
-  ytdlp-nodejs                     Launch interactive mode
-  ytdlp-nodejs download <url>      Download a video
-  ytdlp-nodejs info <url>          Get info as JSON
-  ytdlp-nodejs formats <url>       List formats
-  ytdlp-nodejs urls <url>          Get direct URLs
-  ytdlp-nodejs subs <url>          Download subtitles only
-  ytdlp-nodejs sponsorblock <url>  Download with SponsorBlock
-  ytdlp-nodejs sections <url>      Download sections/time range
-  ytdlp-nodejs update              Update yt-dlp
-  ytdlp-nodejs config              Show or set CLI config
+${Style.warning('Usage:')}
+  ${color('ytdlp', Colors.fg.green)}                     Launch interactive mode
+  ${color('ytdlp download <url>', Colors.fg.green)}      Download a video
+  ${color('ytdlp audio <url>', Colors.fg.green)}         Download audio only
+  ${color('ytdlp info <url>', Colors.fg.green)}          Get info as JSON
+  ${color('ytdlp ffmpeg', Colors.fg.green)}              Download FFmpeg binaries
+  ${color('ytdlp version', Colors.fg.green)}             Show version
+
+${Style.warning('Options:')}
+  ${color('--output', Colors.fg.cyan)} <template>     Output filename template
+  ${color('--quality', Colors.fg.cyan)} <q>           Video quality (1080p, 720p, etc)
+  ${color('--verbose', Colors.fg.cyan)}               Enable verbose logging
 `);
 }

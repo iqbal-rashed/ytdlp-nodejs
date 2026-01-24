@@ -1,7 +1,8 @@
 import { spawn, spawnSync } from 'child_process';
-import type { ChildProcess } from 'child_process';
 import * as fs from 'fs';
 import path from 'path';
+import { Blob } from 'buffer';
+import { PassThrough } from 'stream';
 import {
   ArgsOptions,
   AudioFormat,
@@ -12,7 +13,6 @@ import {
   GetFileOptions,
   InfoOptions,
   InfoType,
-  PipeResponse,
   PlaylistInfo,
   SubtitleInfo,
   UpdateResult,
@@ -20,7 +20,9 @@ import {
   VideoQuality,
   VideoProgress,
   VideoThumbnail,
+  VideoFormat,
   YtDlpOptions,
+  DownloadedVideoInfo,
 } from './types';
 import { createArgs } from './utils/args';
 import { extractThumbnails } from './utils/thumbnails';
@@ -28,6 +30,8 @@ import {
   getContentType,
   getFileExtension,
   parseFormatOptions,
+  getContentTypeFromArgs,
+  getFileExtensionFromArgs,
 } from './utils/format';
 import { PROGRESS_STRING, stringToProgress } from './utils/progress';
 import { downloadFFmpeg, findFFmpegBinary } from './utils/ffmpeg';
@@ -37,33 +41,34 @@ import {
   downloadYtDlpVerified,
   findYtdlpBinary,
 } from './utils/ytdlp';
-import { buildYtDlpArgs } from './core/args';
-import { runYtDlp, spawnYtDlp } from './core/runner';
-import { BIN_DIR } from './configs/paths';
-
-// Import refactored operations
+import { BIN_DIR } from './utils/paths';
+import { Download } from './builder/download-builder';
+import { Stream } from './builder/stream-builder';
 import {
-  DownloadContext,
-  downloadSync,
-  downloadAsync as downloadAsyncOp,
-} from './operations/download';
-import {
-  StreamContext,
-  createStream,
-  getFileAsync as getFileAsyncOp,
-} from './operations/stream';
-import {
-  InfoContext,
-  getInfoAsync as getInfoAsyncOp,
-  getDirectUrlsAsync as getDirectUrlsAsyncOp,
-  getFormatsAsync as getFormatsAsyncOp,
-  getThumbnailsAsync as getThumbnailsAsyncOp,
-  getTitleAsync as getTitleAsyncOp,
-  getVersionAsync as getVersionAsyncOp,
-  getUrlsAsync as getUrlsAsyncOp,
-} from './operations/info';
+  Exec,
+  ExecBuilderResult,
+  ExecPipeResult,
+} from './builder/exec-builder';
 
 export { BIN_DIR };
+
+// Export fluent builder API
+export { Download, createDownload } from './builder/download-builder';
+export type { DownloadBuilderEvents } from './builder/download-builder';
+export {
+  Stream,
+  createStream as createStreamBuilder,
+} from './builder/stream-builder';
+export type {
+  StreamBuilderEvents,
+  StreamResult,
+} from './builder/stream-builder';
+export { Exec, createExec } from './builder/exec-builder';
+export type {
+  ExecBuilderEvents,
+  ExecBuilderResult,
+  ExecPipeResult,
+} from './builder/exec-builder';
 
 /**
  * Main YtDlp class - provides a high-level interface for yt-dlp operations.
@@ -114,21 +119,6 @@ export class YtDlp {
         // Silently ignore - binary may already have correct permissions
       }
     }
-  }
-
-  /** Gets the context for download operations. */
-  private getDownloadContext(): DownloadContext {
-    return { binaryPath: this.binaryPath, ffmpegPath: this.ffmpegPath };
-  }
-
-  /** Gets the context for stream operations. */
-  private getStreamContext(): StreamContext {
-    return { binaryPath: this.binaryPath, ffmpegPath: this.ffmpegPath };
-  }
-
-  /** Gets the context for info operations. */
-  private getInfoContext(): InfoContext {
-    return { binaryPath: this.binaryPath };
   }
 
   /**
@@ -186,7 +176,27 @@ export class YtDlp {
   }
 
   /**
+   * Fetches video or playlist info.
+   * @param url - Video or playlist URL
+   * @param options - Info options
+   * @returns Promise resolving to VideoInfo or PlaylistInfo
+   */
+  public async getInfoAsync<T extends InfoType>(
+    url: string,
+    options?: InfoOptions,
+  ): Promise<T extends 'video' ? VideoInfo : PlaylistInfo> {
+    const res = await this.execAsync(url, {
+      dumpSingleJson: true,
+      flatPlaylist: true,
+      ...options,
+    });
+    return JSON.parse(res.output);
+  }
+
+  /**
    * Executes yt-dlp asynchronously with the provided URL and options.
+   * Uses the Exec builder internally for better control and event handling.
+   *
    * @param url - Video URL
    * @param options - Execution options with optional callbacks
    * @returns Promise resolving to command output
@@ -196,75 +206,104 @@ export class YtDlp {
     options?: ArgsOptions & {
       onData?: (d: string) => void;
       onProgress?: (p: VideoProgress) => void;
+      onBeforeDownload?: (p: DownloadedVideoInfo) => void;
+      pipeTo?: NodeJS.WritableStream;
     },
-  ): Promise<string> {
-    const args = this.buildArgs(url, options || {});
-    const onData = (d: string) => {
-      options?.onData?.(d);
-      if (options?.onProgress) {
-        const result = stringToProgress(d);
-        if (result) {
-          options.onProgress?.(result);
-        }
-      }
-    };
-    return this._executeAsync(args, onData);
+  ): Promise<ExecBuilderResult | ExecPipeResult> {
+    const builder = new Exec(url, {
+      binaryPath: this.binaryPath,
+      ffmpegPath: this.ffmpegPath,
+    });
+
+    const { onData, onProgress, onBeforeDownload, pipeTo, ...execOptions } =
+      options || {};
+
+    if (execOptions) {
+      builder.options(execOptions);
+    }
+
+    if (onData) builder.on('stdout', onData);
+    if (onProgress) builder.on('progress', onProgress);
+    if (onBeforeDownload) builder.on('beforeDownload', onBeforeDownload);
+
+    // If pipeTo is provided, use pipe mode
+    if (pipeTo) {
+      return builder.pipe(pipeTo);
+    }
+
+    return builder.exec();
   }
 
   /**
-   * Executes yt-dlp synchronously.
+   * Executes yt-dlp synchronously with typed events.
+   *
+   * Note: For a more modern fluent API with pipe support and better event handling,
+   * consider using `execBuilder()` instead which returns an Exec builder instance.
+   *
    * @param url - Video URL
    * @param options - Execution options
-   * @returns Spawned child process
+   * @returns ExecEmitter with typed 'progress', 'data', and 'close' events
    */
-  public exec(url: string, options?: ArgsOptions): ChildProcess {
-    const args = this.buildArgs(url, options || {}, true);
-    return this._execute(args);
-  }
-
-  private _execute(args: string[]): ChildProcess {
-    return spawnYtDlp(this.binaryPath, args);
-  }
-
-  private async _executeAsync(
-    args: string[],
-    onData?: (d: string) => void,
-  ): Promise<string> {
-    if (!this.binaryPath) throw new Error('Ytdlp binary not found');
-
-    const result = await runYtDlp(this.binaryPath, args, {
-      onStdout: onData,
-      onStderr: onData,
-    });
-    return result.stdout;
-  }
-
-  private buildArgs(
-    url: string,
-    opt: ArgsOptions,
-    isProgress?: boolean,
-    extra?: string[],
-  ): string[] {
-    return buildYtDlpArgs({
-      url,
-      options: opt,
+  public exec(url: string, options?: ArgsOptions): Exec {
+    const builder = new Exec(url, {
+      binaryPath: this.binaryPath,
       ffmpegPath: this.ffmpegPath,
-      withProgressTemplate: isProgress,
-      extra,
     });
+
+    if (options) {
+      builder.options(options);
+    }
+
+    return builder;
   }
 
   /**
-   * Downloads a video synchronously.
+   * Downloads a video with fluent builder API.
+   * Chain methods like .format(), .quality(), .on() and call .run() to execute.
+   *
    * @param url - Video URL
-   * @param options - Download options
-   * @returns Spawned child process with 'progress' event
+   * @param options - Optional initial format options
+   * @returns Download builder with fluent API
+   *
+   * @example
+   * ```typescript
+   * // With fluent API
+   * const result = await ytdlp
+   *   .download('https://youtube.com/watch?v=...')
+   *   .format('mergevideo')
+   *   .quality('1080p')
+   *   .on('progress', (p) => console.log(p.percentage_str))
+   *   .run();
+   *
+   * // With initial options
+   * const result = await ytdlp
+   *   .download('https://youtube.com/watch?v=...', {
+   *     format: { filter: 'mergevideo', quality: '1080p' }
+   *   })
+   *   .on('progress', (p) => console.log(p.percentage_str))
+   *   .run();
+   * ```
    */
   public download<F extends FormatKeyWord>(
     url: string,
-    options?: Omit<FormatOptions<F>, 'onProgress'>,
-  ): ChildProcess {
-    return downloadSync(this.getDownloadContext(), url, options);
+    options?: Omit<FormatOptions<F>, 'onProgress' | 'beforeDownload'>,
+  ): Download {
+    const builder = new Download(url, {
+      binaryPath: this.binaryPath,
+      ffmpegPath: this.ffmpegPath,
+    });
+
+    // Apply initial format options if provided
+    const { format, ...rest } = options || {};
+    if (format) {
+      builder.format(format);
+    }
+
+    if (rest) {
+      builder.options(rest);
+    }
+
+    return builder;
   }
 
   /**
@@ -277,33 +316,130 @@ export class YtDlp {
     url: string,
     options?: FormatOptions<F>,
   ): Promise<DownloadResult> {
-    return downloadAsyncOp(this.getDownloadContext(), url, options);
+    const { onProgress, beforeDownload, ...rest } = options || {};
+
+    const builder = this.download(url, rest);
+
+    // Attach progress listener if provided
+    if (onProgress) {
+      builder.on('progress', onProgress);
+    }
+
+    // Attach beforeDownload listener if provided
+    if (beforeDownload) {
+      builder.on('beforeDownload', beforeDownload);
+    }
+
+    const result = await builder.run();
+
+    return {
+      output: result.output,
+      filePaths: result.filePaths,
+      info: result.info,
+    };
   }
 
   /**
-   * Creates a stream for video download.
+   * Creates a stream with fluent builder API.
+   * Chain methods to configure and use .pipe() or .pipeAsync() to stream.
+   *
    * @param url - Video URL
-   * @param options - Stream options
-   * @returns PipeResponse with pipe and pipeAsync methods
+   * @param options - Optional initial format options
+   * @returns Stream builder with fluent API
+   *
+   * @example
+   * ```typescript
+   * import { createWriteStream } from 'fs';
+   *
+   * // Fluent builder API
+   * await ytdlp
+   *   .stream('https://youtube.com/watch?v=...')
+   *   .format('audioandvideo')
+   *   .quality('highest')
+   *   .type('mp4')
+   *   .on('progress', (p) => console.log(p.percentage_str))
+   *   .pipeAsync(createWriteStream('video.mp4'));
+   *
+   * // With initial options
+   * await ytdlp
+   *   .stream(url, { format: { filter: 'audioandvideo' } })
+   *   .pipeAsync(createWriteStream('video.mp4'));
+   * ```
    */
   public stream<F extends FormatKeyWord>(
     url: string,
-    options?: FormatOptions<F>,
-  ): PipeResponse {
-    return createStream(this.getStreamContext(), url, options);
+    options?: Omit<FormatOptions<F>, 'onProgress'>,
+  ): Stream {
+    const builder = new Stream(url, {
+      binaryPath: this.binaryPath,
+      ffmpegPath: this.ffmpegPath,
+    });
+
+    // Apply initial format options if provided
+    const { format, ...rest } = options || {};
+    if (format) {
+      builder.format(format);
+    }
+
+    if (rest) {
+      builder.options(rest);
+    }
+
+    return builder;
   }
 
   /**
-   * Fetches video or playlist info.
-   * @param url - Video or playlist URL
-   * @param options - Info options
-   * @returns Promise resolving to VideoInfo or PlaylistInfo
+   * Creates an exec builder with fluent API for arbitrary yt-dlp commands.
+   * Combines features from Download and Stream builders.
+   *
+   * Supports both execution modes (get stdout/stderr) and pipe mode (stream to file).
+   *
+   * @param url - Video URL
+   * @param options - Optional initial format options
+   * @returns Exec builder with fluent API
+   *
+   * @example
+   * ```typescript
+   * import { createWriteStream } from 'fs';
+   *
+   * // Execute arbitrary command and get output
+   * const result = await ytdlp
+   *   .execBuilder('https://youtube.com/watch?v=...')
+   *   .addArgs('--dump-single-json')
+   *   .exec();
+   *
+   * console.log('Output:', result.stdout);
+   *
+   * // Pipe to file with download events
+   * await ytdlp
+   *   .execBuilder('https://youtube.com/watch?v=...')
+   *   .format('mergevideo')
+   *   .quality('720p')
+   *   .on('beforeDownload', (info) => console.log('Starting:', info.title))
+   *   .on('afterDownload', (info) => console.log('Finished:', info.filepath))
+   *   .pipe(createWriteStream('video.mp4'));
+   * ```
    */
-  public async getInfoAsync<T extends InfoType>(
+  public execBuilder<F extends FormatKeyWord>(
     url: string,
-    options?: InfoOptions,
-  ): Promise<T extends 'video' ? VideoInfo : PlaylistInfo> {
-    return getInfoAsyncOp<T>(this.getInfoContext(), url, options);
+    options?: Omit<FormatOptions<F>, 'onProgress'>,
+  ): Exec {
+    const builder = new Exec(url, {
+      binaryPath: this.binaryPath,
+      ffmpegPath: this.ffmpegPath,
+    });
+
+    // Apply initial format options if provided
+    const { format, ...rest } = options || {};
+    if (format) {
+      builder.format(format);
+    }
+
+    if (rest) {
+      builder.options(rest);
+    }
+
+    return builder;
   }
 
   /**
@@ -391,7 +527,7 @@ export class YtDlp {
     url: string,
     options?: ArgsOptions,
   ): Promise<SubtitleInfo[]> {
-    const result = await this.downloadAsync(url, {
+    const result = await this.execAsync(url, {
       ...options,
       listSubs: true,
       skipDownload: true,
@@ -415,7 +551,7 @@ export class YtDlp {
     maxComments: number = 20,
     options?: ArgsOptions,
   ): Promise<unknown[]> {
-    const result = await this.downloadAsync(url, {
+    const result = await this.execAsync(url, {
       ...options,
       writeComments: true,
       dumpSingleJson: true,
@@ -444,7 +580,8 @@ export class YtDlp {
     url: string,
     options?: ArgsOptions,
   ): Promise<string[]> {
-    return getDirectUrlsAsyncOp(this.getInfoContext(), url, options);
+    const info = await this.getInfoAsync<'video'>(url, options);
+    return info.formats.map((f: VideoFormat) => f.url);
   }
 
   /**
@@ -457,7 +594,12 @@ export class YtDlp {
     url: string,
     options?: ArgsOptions,
   ): Promise<FormatsResult> {
-    return getFormatsAsyncOp(this.getInfoContext(), url, options);
+    const info = await this.getInfoAsync<'video'>(url, options);
+    return {
+      source: 'json',
+      info,
+      formats: info.formats,
+    };
   }
 
   /**
@@ -466,7 +608,8 @@ export class YtDlp {
    * @returns Promise resolving to array of VideoThumbnail
    */
   public async getThumbnailsAsync(url: string): Promise<VideoThumbnail[]> {
-    return getThumbnailsAsyncOp(this.getInfoContext(), url);
+    const info = await this.getInfoAsync<'video'>(url);
+    return info.thumbnails;
   }
 
   /**
@@ -475,7 +618,10 @@ export class YtDlp {
    * @returns Promise resolving to title string
    */
   public async getTitleAsync(url: string): Promise<string> {
-    return getTitleAsyncOp(this.getInfoContext(), url);
+    const result = await this.execAsync(url, {
+      print: 'title',
+    });
+    return result.output.trim();
   }
 
   /**
@@ -483,7 +629,10 @@ export class YtDlp {
    * @returns Promise resolving to version string
    */
   public async getVersionAsync(): Promise<string> {
-    return getVersionAsyncOp(this.getInfoContext());
+    const result = await this.execAsync('', {
+      printVersion: true,
+    });
+    return result.output.trim();
   }
 
   /**
@@ -496,8 +645,7 @@ export class YtDlp {
 
   /**
    * Gets video/audio content as a File object.
-   * Optimized: Uses --print before_dl:%(title)s.%(ext)s to capture
-   * filename during download - no separate info fetch required.
+   * Downloads the media to memory and returns a File object.
    * @param url - Video URL
    * @param options - File options with progress callback
    * @returns Promise resolving to File object
@@ -506,9 +654,79 @@ export class YtDlp {
     url: string,
     options?: GetFileOptions<F> & {
       onProgress?: (p: VideoProgress) => void;
+      onBeforeDownload?: (p: DownloadedVideoInfo) => void;
     },
   ): Promise<File> {
-    return getFileAsyncOp(this.getStreamContext(), url, options);
+    // First get video info for title
+    let info: DownloadedVideoInfo | undefined;
+    const {
+      onBeforeDownload,
+      onProgress,
+      filename,
+      metadata,
+      format,
+      ...rest
+    } = options || {};
+
+    // Collect data in memory
+    const chunks: Buffer[] = [];
+    const passThrough = new PassThrough();
+
+    passThrough.on('data', (chunk) => chunks.push(Buffer.from(chunk)));
+
+    // Build format args and merge with rest options
+    const formatArgs = parseFormatOptions(format);
+    const execOptions: ArgsOptions = { ...rest };
+
+    // Apply format args to options
+    if (formatArgs.length >= 2 && formatArgs[0] === '-f') {
+      (execOptions as ArgsOptions & { format?: string }).format = formatArgs[1];
+    }
+    if (formatArgs.includes('--merge-output-format')) {
+      const idx = formatArgs.indexOf('--merge-output-format');
+      (
+        execOptions as ArgsOptions & { mergeOutputFormat?: string }
+      ).mergeOutputFormat = formatArgs[idx + 1];
+    }
+
+    await this.execAsync(url, {
+      ...execOptions,
+      pipeTo: passThrough,
+      onProgress,
+      onBeforeDownload: (p) => {
+        info = p;
+        onBeforeDownload?.(p);
+      },
+      output: '-',
+    });
+
+    // Determine content type and extension
+    let contentType: string;
+    let extension: string;
+
+    if (format && typeof format === 'object') {
+      contentType = getContentType(format);
+      extension = getFileExtension(format);
+    } else {
+      // Check for extractAudio in options
+      const fromArgs = getContentTypeFromArgs(rest);
+      contentType = fromArgs || 'video/mp4';
+      const extFromArgs = getFileExtensionFromArgs(rest);
+      extension = extFromArgs || 'mp4';
+    }
+
+    const blob = new Blob(chunks, { type: contentType });
+
+    const defaultMetadata = {
+      name: filename || `${info?.title || 'download'}.${extension}`,
+      type: contentType,
+      size: blob.size,
+      ...metadata,
+    };
+
+    return new File([Buffer.concat(chunks)], defaultMetadata.name, {
+      type: defaultMetadata.type,
+    });
   }
 
   /**
@@ -521,7 +739,11 @@ export class YtDlp {
     url: string,
     options?: ArgsOptions,
   ): Promise<string[]> {
-    return getUrlsAsyncOp(this.getInfoContext(), url, options);
+    const result = await this.execAsync(url, {
+      ...options,
+      print: 'urls',
+    });
+    return result.output.split('\n').filter(Boolean);
   }
 
   /**
@@ -538,7 +760,7 @@ export class YtDlp {
 
     if (preferBuiltIn && this.binaryPath) {
       try {
-        await runYtDlp(this.binaryPath, ['--update']);
+        await this.execAsync('', { update: true });
         const version = await this.getVersionAsync().catch(() => undefined);
         return {
           method: 'built-in',
@@ -557,9 +779,9 @@ export class YtDlp {
 
     if (verifyChecksum) {
       const result = await downloadYtDlpVerified(outDir);
-      const version = await runYtDlp(result.path, ['--version'])
-        .then((res) => res.stdout.trim())
-        .catch(() => undefined);
+      const version = await this.getVersionAsyncUsingBinary(result.path).catch(
+        () => undefined,
+      );
       return {
         method: 'download',
         binaryPath: result.path,
@@ -569,15 +791,48 @@ export class YtDlp {
     }
 
     const downloadedPath = await downloadYtDlp(outDir);
-    const version = await runYtDlp(downloadedPath, ['--version'])
-      .then((res) => res.stdout.trim())
-      .catch(() => undefined);
+    const version = await this.getVersionAsyncUsingBinary(downloadedPath).catch(
+      () => undefined,
+    );
     return {
       method: 'download',
       binaryPath: downloadedPath,
       version,
       verified: false,
     };
+  }
+
+  /**
+   * Gets version using a specific binary path.
+   * @param binaryPath - Path to the yt-dlp binary
+   * @returns Promise resolving to version string
+   */
+  private async getVersionAsyncUsingBinary(
+    binaryPath: string,
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const process = spawn(binaryPath, ['--version']);
+      let stdout = '';
+      let stderr = '';
+
+      process.stdout?.on('data', (data) => {
+        stdout += data.toString();
+      });
+
+      process.stderr?.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      process.on('close', (code) => {
+        if (code === 0) {
+          resolve(stdout.trim());
+        } else {
+          reject(new Error(`Failed to get version: ${stderr}`));
+        }
+      });
+
+      process.on('error', reject);
+    });
   }
 }
 
@@ -604,6 +859,7 @@ export const helpers = {
 // Re-export types for consumers
 export type {
   ArgsOptions,
+  DownloadFinishResult,
   DownloadResult,
   DownloadedVideoInfo,
   FormatOptions,

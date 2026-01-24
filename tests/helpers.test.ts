@@ -4,14 +4,22 @@ const ytdlp = new YtDlp();
 
 describe('Convenience Methods', () => {
   let downloadAsyncSpy: jest.SpyInstance;
+  let execAsyncSpy: jest.SpyInstance;
 
   beforeEach(() => {
     // Mock the underlying downloadAsync method
     downloadAsyncSpy = jest.spyOn(ytdlp, 'downloadAsync').mockResolvedValue({
-      output: JSON.stringify({ comments: [] }),
+      output: '',
       filePaths: [],
-      thumbnailPaths: [],
-      subtitlePaths: [],
+    });
+
+    // Mock the execAsync method for getSubtitles and getComments
+    execAsyncSpy = jest.spyOn(ytdlp, 'execAsync').mockResolvedValue({
+      stdout: '',
+      stderr: '',
+      exitCode: 0,
+      command: '',
+      output: '',
     });
   });
 
@@ -68,7 +76,7 @@ describe('Convenience Methods', () => {
   describe('getSubtitles', () => {
     it('should use list-subs and skip-download', async () => {
       await ytdlp.getSubtitles('https://www.youtube.com/watch?v=123');
-      expect(downloadAsyncSpy).toHaveBeenCalledWith(
+      expect(execAsyncSpy).toHaveBeenCalledWith(
         'https://www.youtube.com/watch?v=123',
         {
           listSubs: true,
@@ -81,7 +89,7 @@ describe('Convenience Methods', () => {
   describe('getComments', () => {
     it('should use write-comments and dump-json', async () => {
       await ytdlp.getComments('https://www.youtube.com/watch?v=123', 50);
-      expect(downloadAsyncSpy).toHaveBeenCalledWith(
+      expect(execAsyncSpy).toHaveBeenCalledWith(
         'https://www.youtube.com/watch?v=123',
         expect.objectContaining({
           writeComments: true,

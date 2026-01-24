@@ -2,26 +2,15 @@
 
 [SponsorBlock](https://sponsor.ajay.app/) is a crowdsourced project to skip sponsor segments in YouTube videos. `ytdlp-nodejs` seamlessly integrates SponsorBlock functionality.
 
-## CLI Usage
-
-The simplest way is to use the interactive menu:
-
-```bash
-ytdlp-nodejs
-# Select 'SponsorBlock flow'
-```
-
-Or us the command line:
-
-```bash
-ytdlp-nodejs sponsorblock <url> --categories sponsor,intro --mode remove
-```
-
 ## Programmatic Usage
 
 You can use SponsorBlock options in `downloadAsync`:
 
 ```typescript
+import { YtDlp } from 'ytdlp-nodejs';
+
+const ytdlp = new YtDlp();
+
 await ytdlp.downloadAsync(url, {
   // Mark segments as chapters
   sponsorblockMark: ['sponsor', 'intro', 'outro', 'selfpromo'],
@@ -29,6 +18,18 @@ await ytdlp.downloadAsync(url, {
   // Or remove segments entirely from the downloaded file
   sponsorblockRemove: ['sponsor', 'selfpromo'],
 });
+```
+
+## Using the Fluent Builder API
+
+```typescript
+const result = await ytdlp
+  .download(url)
+  .options({
+    sponsorblockMark: ['sponsor', 'intro'],
+    sponsorblockRemove: ['selfpromo'],
+  })
+  .run();
 ```
 
 ## Categories

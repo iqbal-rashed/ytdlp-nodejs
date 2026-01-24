@@ -3,19 +3,16 @@
  * Provides non-interactive command handlers.
  */
 
-import { FormatOptions, FormatsResult, UpdateResult } from '../types';
+import { FormatsResult, UpdateResult, VideoQuality } from '../types';
 import { YtDlp } from '..';
-import { loadConfig, updateConfig, CliConfig } from '../configs/config';
 import {
   CliOptionValue,
-  applySubtitleOptions,
-  applySponsorblockOptions,
   buildArgsOptions,
   formatTableRows,
   printUsage,
-  progressHandler,
-  resolveFormatOption,
 } from './utils';
+import { Style } from './style';
+import { interactiveDownload, interactiveInfo } from './interactive';
 
 /**
  * Handles format results output.
@@ -51,23 +48,7 @@ export async function runCommand(
       printUsage();
       return;
     }
-    const config = await loadConfig();
-    const argsOptions = buildArgsOptions(options, config);
-    applySubtitleOptions(argsOptions, options, config);
-    applySponsorblockOptions(argsOptions, options, config);
-
-    const format = resolveFormatOption(options, config);
-    const formatOptions: FormatOptions<'audioonly'> = {
-      ...argsOptions,
-      format,
-      onProgress: options.verbose ? progressHandler('Downloading') : undefined,
-    };
-
-    formatOptions.printPaths = Boolean(options.printPaths);
-    if (options.printPaths) {
-      formatOptions.onPaths = (paths) => console.log(paths.join('\n'));
-    }
-    await ytdlp.downloadAsync(String(url), formatOptions);
+    await interactiveDownload(ytdlp, false, String(url));
     return;
   }
 
@@ -77,8 +58,7 @@ export async function runCommand(
       printUsage();
       return;
     }
-    const info = await ytdlp.getInfoAsync(String(url));
-    console.log(JSON.stringify(info, null, 2));
+    await interactiveInfo(ytdlp, String(url));
     return;
   }
 
@@ -93,101 +73,56 @@ export async function runCommand(
     return;
   }
 
-  if (command === 'urls') {
+  if (command === 'audio') {
     const url = positionals[0];
     if (!url) {
       printUsage();
       return;
     }
-    const urls = await ytdlp.getDirectUrlsAsync(String(url));
-    console.log(urls.join('\n'));
+    await interactiveDownload(ytdlp, true, String(url));
     return;
   }
 
-  if (command === 'subs') {
+  if (command === 'video') {
     const url = positionals[0];
     if (!url) {
       printUsage();
       return;
     }
-    const config = await loadConfig();
-    const argsOptions = buildArgsOptions(options, config);
-    applySubtitleOptions(
+    const argsOptions = buildArgsOptions(options);
+    const quality = options.quality ? String(options.quality) : 'best';
+
+    const result = await ytdlp.downloadVideo(
+      String(url),
+      quality as VideoQuality,
       argsOptions,
-      {
-        ...options,
-        writeSubs: true,
-        writeAutoSubs: options.auto,
-        embedSubs: options.embed,
-      },
-      config,
     );
-    argsOptions.skipDownload = true;
-    await ytdlp.execAsync(String(url), argsOptions);
+    if (result.filePaths.length > 0) {
+      console.log(result.filePaths.join('\n'));
+    }
     return;
   }
 
-  if (command === 'sponsorblock') {
-    const url = positionals[0];
-    if (!url) {
-      printUsage();
-      return;
+  if (command === 'ffmpeg') {
+    console.log(Style.info('Downloading FFmpeg...'));
+    const path = await ytdlp.downloadFFmpeg();
+    if (path) {
+      console.log(Style.success(`FFmpeg available at: ${path}`));
+    } else {
+      console.log(Style.error('Failed to download FFmpeg.'));
     }
-    const config = await loadConfig();
-    const argsOptions = buildArgsOptions(options, config);
-    applySponsorblockOptions(
-      argsOptions,
-      {
-        sponsorblockCategories:
-          options.categories || options.sponsorblockCategories,
-        sponsorblockMode: options.mode || options.sponsorblockMode,
-      },
-      config,
-    );
-    await ytdlp.downloadAsync(String(url), argsOptions);
-    return;
-  }
-
-  if (command === 'sections') {
-    const url = positionals[0];
-    if (!url) {
-      printUsage();
-      return;
-    }
-    const range = options.range;
-    if (!range) {
-      printUsage();
-      return;
-    }
-    const config = await loadConfig();
-    const argsOptions = buildArgsOptions(options, config);
-    argsOptions.downloadSections = String(range);
-    argsOptions.splitChapters = Boolean(options.splitChapters);
-    await ytdlp.downloadAsync(String(url), argsOptions);
     return;
   }
 
   if (command === 'update') {
     const result: UpdateResult = await ytdlp.updateYtDlpAsync();
     console.log(
-      `Updated via ${result.method}. Binary: ${result.binaryPath}${
-        result.version ? ` (version ${result.version})` : ''
-      }`,
+      Style.success(
+        `Updated via ${result.method}. Binary: ${result.binaryPath}${
+          result.version ? ` (version ${result.version})` : ''
+        }`,
+      ),
     );
-    return;
-  }
-
-  if (command === 'config') {
-    if (options.set) {
-      const [key, value] = String(options.set).split('=');
-      if (!key) {
-        console.error('Invalid config pair.');
-        return;
-      }
-      await updateConfig({ [key]: value } as CliConfig);
-    }
-    const config = await loadConfig();
-    console.log(JSON.stringify(config, null, 2));
     return;
   }
 

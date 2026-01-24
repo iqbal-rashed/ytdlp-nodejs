@@ -5,3 +5,5 @@ output
 .tsup
 src/bin
 doc_build
+downloads
+.claude

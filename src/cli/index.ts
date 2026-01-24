@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * ytdlp-nodejs CLI
  * Main entry point for the command-line interface.

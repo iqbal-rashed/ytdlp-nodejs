@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { downloadFile, fetchText } from '../utils/request';
-import { BIN_DIR } from '../configs/paths';
+import { BIN_DIR } from './paths';
 import crypto from 'crypto';
 
 const DOWNLOAD_BASE_URL =

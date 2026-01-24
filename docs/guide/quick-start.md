@@ -14,23 +14,30 @@ const ytdlp = new YtDlp();
 
 ## Downloading a Video
 
-Download a video with default settings (best quality):
+Download a video using the fluent builder API:
 
 ```typescript
-await ytdlp.downloadAsync('https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+const result = await ytdlp
+  .download('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+  .filter('mergevideo')
+  .quality('1080p')
+  .type('mp4')
+  .on('progress', (progress) => {
+    console.log(`Downloading: ${progress.percentage_str}`);
+    console.log(`Speed: ${progress.speed_str}`);
+    console.log(`ETA: ${progress.eta_str}`);
+  })
+  .run();
+
+console.log('Downloaded files:', result.filePaths);
 ```
 
-To track progress and handle the output:
+Or use `downloadAsync` with callback-style progress:
 
 ```typescript
 await ytdlp.downloadAsync('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
-  onProgress: (progress) => {
-    console.log(`Downloading: ${progress.percent}%`);
-    console.log(`Speed: ${progress.currentSpeed}`);
-    console.log(`ETA: ${progress.eta}`);
-  },
-  printPaths: true,
-  onPaths: (paths) => console.log('Saved files:', paths),
+  format: { filter: 'mergevideo', quality: '1080p', type: 'mp4' },
+  onProgress: (progress) => console.log(`${progress.percentage_str}`),
 });
 ```
 

@@ -10,22 +10,22 @@ import { YtDlp } from 'ytdlp-nodejs';
 const ytdlp = new YtDlp();
 
 async function downloadWithProgress() {
-  const result = await ytdlp.downloadAsync(
-    'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    {
-      format: {
-        filter: 'mergevideo',
-        quality: '1080p',
-        type: 'mp4',
-      },
-      onProgress: (progress) => {
-        console.log(`Downloaded: ${progress.percentage_str}`);
-        console.log(`Speed: ${progress.speed_str}`);
-        console.log(`ETA: ${progress.eta_str}`);
-      },
-    },
-  );
-  console.log('Download complete:', result);
+  // Fluent builder API
+  const result = await ytdlp
+    .download('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    .filter('mergevideo')
+    .quality('1080p')
+    .type('mp4')
+    .output('./downloads')
+    .on('progress', (progress) => {
+      console.log(`Downloaded: ${progress.percentage_str}`);
+      console.log(`Speed: ${progress.speed_str}`);
+      console.log(`ETA: ${progress.eta_str}`);
+    })
+    .run();
+
+  console.log('Download complete!');
+  console.log('Files:', result.filePaths);
 }
 
 downloadWithProgress();
@@ -83,20 +83,22 @@ import { YtDlp } from 'ytdlp-nodejs';
 const ytdlp = new YtDlp();
 
 async function downloadAudio() {
-  // Method 1: Using downloadAudio helper
+  // Method 1: Using fluent builder API
+  const result = await ytdlp
+    .download('https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+    .filter('audioonly')
+    .type('mp3')
+    .quality(0) // 0-10, 0 is best
+    .on('progress', (p) => console.log(p.percentage_str))
+    .run();
+
+  console.log('Audio downloaded:', result.filePaths);
+
+  // Method 2: Using downloadAudio helper
   await ytdlp.downloadAudio(
     'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
     'mp3',
   );
-
-  // Method 2: Using downloadAsync with format options
-  await ytdlp.downloadAsync('https://www.youtube.com/watch?v=dQw4w9WgXcQ', {
-    format: {
-      filter: 'audioonly',
-      type: 'mp3',
-      quality: 5, // 0-10, lower is better
-    },
-  });
 }
 
 downloadAudio();
@@ -110,19 +112,13 @@ import { YtDlp } from 'ytdlp-nodejs';
 const ytdlp = new YtDlp();
 
 async function getUrls() {
-  // Get URLs for default format
-  const urls = await ytdlp.getUrlsAsync(
+  // Get direct streaming URLs for all formats
+  const urls = await ytdlp.getDirectUrlsAsync(
     'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   );
-  console.log('Video URL:', urls[0]);
-  console.log('Audio URL:', urls[1]);
 
-  // Get URLs for specific format
-  const directUrls = await ytdlp.getDirectUrlsAsync(
-    'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    { format: 'best' },
-  );
-  console.log('Direct URLs:', directUrls);
+  console.log(`Found ${urls.length} format URLs`);
+  console.log('First URL:', urls[0]);
 }
 
 getUrls();

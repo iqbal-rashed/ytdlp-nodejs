@@ -7,71 +7,108 @@
 Simply run the command without arguments to start the interactive menu:
 
 ```bash
-npx ytdlp-nodejs
+npx ytdlp
 # or if installed globally
-ytdlp-nodejs
+ytdlp
 ```
 
-This will launch a Text User Interface (TUI) where you can select actions like "Download video", "Get info", "Update yt-dlp", and more.
+This will launch a beautiful interactive menu where you can:
 
-## Command Mode
+- Download videos with quality selection
+- Download audio with format selection
+- Get formatted video information
+- Update yt-dlp binary
+- Download FFmpeg binaries
 
-You can also run specific commands directly.
+## Interactive Commands
 
-### Download
+These commands will prompt you for additional options interactively:
 
-Download a video with specific format:
+### Download Video
 
 ```bash
-ytdlp-nodejs download <url> --format "bestvideo+bestaudio"
+ytdlp download <url>
 ```
 
-Download audio only:
+You'll be prompted to:
+
+1. Select video quality (4K, 1080p, 720p, etc.)
+2. Enter optional extra arguments (e.g., `--embed-subs`)
+
+### Download Audio
 
 ```bash
-ytdlp-nodejs download <url> --audio-only --audio-format mp3
+ytdlp audio <url>
 ```
 
-### Get Info
+You'll be prompted to:
 
-Get video information as JSON:
+1. Select audio format (MP3, M4A, WAV, or Best Quality)
+2. Enter optional extra arguments
+
+### Get Video Info
 
 ```bash
-ytdlp-nodejs info <url>
+ytdlp info <url>
 ```
+
+Displays formatted video information including title, uploader, duration, views, and more.
+
+## Direct Commands
+
+These commands run without interactive prompts:
 
 ### List Formats
 
 List all available formats for a video:
 
 ```bash
-ytdlp-nodejs formats <url>
+ytdlp formats <url>
 ```
 
-### Direct URLs
+### Download with Specific Quality
 
-Get the direct streaming URLs:
+Download directly with a specific quality (non-interactive):
 
 ```bash
-ytdlp-nodejs urls <url>
+ytdlp video <url> --quality 1080p
 ```
 
-### Subtitles
+### Download FFmpeg
 
-Download subtitles:
+Download FFmpeg binaries to the project:
 
 ```bash
-ytdlp-nodejs subs <url> --sub-langs en,es --sub-format srt --auto
+ytdlp ffmpeg
 ```
 
-### Update
+### Update yt-dlp
 
 Update the internal `yt-dlp` binary:
 
 ```bash
-ytdlp-nodejs update
+ytdlp update
 ```
 
-## CLI Configuration
+## Examples
 
-The CLI saves your preferences in a `config.json` file. You can configure settings like default download directory, proxy, and concurrency via the interactive "Settings" menu.
+### Quick interactive download
+
+```bash
+ytdlp download https://youtube.com/watch?v=dQw4w9WgXcQ
+# Select quality from menu → Downloads video
+```
+
+### Direct audio download
+
+```bash
+ytdlp audio https://youtube.com/watch?v=dQw4w9WgXcQ
+# Select MP3 → Downloads as audio
+```
+
+### Get video information
+
+```bash
+ytdlp info https://youtube.com/watch?v=dQw4w9WgXcQ
+# Displays formatted video details
+```

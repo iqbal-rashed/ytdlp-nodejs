@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { downloadFile } from './request';
-import { BIN_DIR } from '../configs/paths';
+import { BIN_DIR } from './paths';
 
 const DOWNLOAD_BASE_URL =
   'https://github.com/iqbal-rashed/ytdlp-nodejs/releases/download/ffmpeg-latest';
@@ -31,7 +31,7 @@ function getBuildsArray(): string[] {
 
   if (!PLATFORM_MAPPINGS[platform] || !PLATFORM_MAPPINGS[platform][arch]) {
     throw new Error(
-      `No FFmpeg build available for platform: ${platform}, architecture: ${arch}`
+      `No FFmpeg build available for platform: ${platform}, architecture: ${arch}`,
     );
   }
 
@@ -55,7 +55,7 @@ export async function downloadFFmpeg(out?: string) {
     const downloadUrls = buildsArr.map((v) => `${DOWNLOAD_BASE_URL}/${v}`);
 
     const outputPaths = buildsArr.map((v) =>
-      path.join(OUT_DIR, String(v.split('-').pop()))
+      path.join(OUT_DIR, String(v.split('-').pop())),
     );
 
     if (!fs.existsSync(OUT_DIR)) {
@@ -78,7 +78,7 @@ export async function downloadFFmpeg(out?: string) {
       }
     } catch {
       console.log(
-        'Note: Could not set executable permissions (likely Windows)'
+        'Note: Could not set executable permissions (likely Windows)',
       );
     }
 
@@ -97,7 +97,7 @@ export function findFFmpegBinary() {
 
     const ffmpegPath = path.join(
       BIN_DIR,
-      String(buildsArr[0].split('-').pop())
+      String(buildsArr[0].split('-').pop()),
     );
 
     if (!fs.existsSync(ffmpegPath)) {

@@ -1,3 +1,5 @@
+> **⚠️ Notice**: Version 3.4.0 is currently in beta. While we've thoroughly tested the new features, please report any issues you encounter on our [GitHub Issues](https://github.com/iqbal-rashed/ytdlp-nodejs/issues) page. Your feedback helps make this library better!
+
 # ytdlp-nodejs
 
 [![npm version](https://img.shields.io/npm/v/ytdlp-nodejs.svg)](https://www.npmjs.com/package/ytdlp-nodejs)
@@ -34,13 +36,16 @@ import { YtDlp } from 'ytdlp-nodejs';
 
 const ytdlp = new YtDlp();
 
-// Download a video
-const result = await ytdlp.downloadAsync(
-  'https://youtube.com/watch?v=dQw4w9WgXcQ',
-  {
-    onProgress: (progress) => console.log(`${progress.percent}%`),
-  },
-);
+// Download a video with fluent API
+const result = await ytdlp
+  .download('https://youtube.com/watch?v=dQw4w9WgXcQ')
+  .format('mergevideo')
+  .quality('1080p')
+  .type('mp4')
+  .on('progress', (p) => console.log(`${p.percentage_str}`))
+  .run();
+
+console.log('Downloaded:', result.filePaths);
 
 // Get video info
 const info = await ytdlp.getInfoAsync(
@@ -58,30 +63,45 @@ await stream.pipeAsync(createWriteStream('video.mp4'));
 
 ### Interactive Mode
 
+Launch the interactive menu to access all features with guided prompts:
+
 ```bash
-ytdlp-nodejs
+ytdlp
 ```
 
 ### Commands
 
+#### Interactive Commands
+
+These commands prompt for quality/format selection:
+
 ```bash
-# Download video
-ytdlp-nodejs download <url> --format "bestvideo+bestaudio"
+# Download video (interactive quality selection)
+ytdlp download <url>
 
-# Download audio only
-ytdlp-nodejs download <url> --audio-only --audio-format mp3
+# Download audio only (interactive format selection)
+ytdlp audio <url>
 
+# Get video info (formatted display)
+ytdlp info <url>
+```
+
+#### Direct Commands
+
+These commands run without prompts:
+
+```bash
 # List available formats
-ytdlp-nodejs formats <url>
+ytdlp formats <url>
 
-# Get direct URLs
-ytdlp-nodejs urls <url>
+# Download with specific quality (non-interactive)
+ytdlp video <url> --quality 1080p
 
-# Download subtitles
-ytdlp-nodejs subs <url> --sub-langs en,es --sub-format srt
+# Download FFmpeg binaries
+ytdlp ffmpeg
 
-# Update yt-dlp
-ytdlp-nodejs update
+# Update yt-dlp binary
+ytdlp update
 ```
 
 ## API Reference
@@ -97,28 +117,61 @@ const ytdlp = new YtDlp({
 
 ### Download Methods
 
+#### `download(url, options?)`
+
+Returns a fluent builder for downloading with chainable methods.
+
+```typescript
+// Fluent builder API (recommended)
+const result = await ytdlp
+  .download('https://youtube.com/watch?v=...')
+  .filter('mergevideo')
+  .quality('1080p')
+  .type('mp4')
+  .output('./downloads')
+  .embedThumbnail()
+  .on('progress', (p) => console.log(`${p.percentage_str}`))
+  .run();
+
+console.log('Files:', result.filePaths);
+
+// With initial options
+const result = await ytdlp
+  .download(url, {
+    format: { filter: 'mergevideo', quality: '1080p', type: 'mp4' },
+  })
+  .embedThumbnail()
+  .on('progress', (p) => console.log(p))
+  .run();
+```
+
+##### Builder Methods
+
+| Category      | Methods                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| **Format**    | `.filter()`, `.quality()`, `.type()`, `.format()`                                                   |
+| **Output**    | `.output('./downloads')`, `.setOutputTemplate('%(title)s.%(ext)s')`                                 |
+| **Audio**     | `.extractAudio()`, `.audioFormat('mp3')`, `.audioQuality('0')`                                      |
+| **Embed**     | `.embedThumbnail()`, `.embedSubs()`, `.embedMetadata()`                                             |
+| **Subtitles** | `.writeSubs()`, `.writeAutoSubs()`, `.subLangs(['en', 'es'])`                                       |
+| **Thumbnail** | `.writeThumbnail()`                                                                                 |
+| **Auth**      | `.cookies(str)`, `.cookiesFromBrowser('chrome')`, `.username(user)`, `.password(pass)`              |
+| **Network**   | `.proxy(url)`, `.rateLimit('1M')`                                                                   |
+| **Playlist**  | `.playlistStart(1)`, `.playlistEnd(10)`, `.playlistItems('1,3,5')`                                  |
+| **Advanced**  | `.options(argsOptions)`, `.addOption(key, value)`, `.addArgs(...args)`, `.skipDownload()`           |
+| **Events**    | `.on('start' \| 'progress' \| 'beforeDownload' \| 'stdout' \| 'stderr' \| 'error' \| 'finish', fn)` |
+| **Execute**   | `.run()` - returns `Promise<DownloadFinishResult>` - Also directly `await`able                      |
+
 #### `downloadAsync(url, options?)`
 
-Downloads a video asynchronously.
+Downloads a video asynchronously with callback-style progress.
 
 ```typescript
 const result = await ytdlp.downloadAsync(url, {
-  format: 'bestvideo+bestaudio', // or use Format Options
+  format: { filter: 'mergevideo', type: 'mp4', quality: '1080p' },
   output: './downloads/%(title)s.%(ext)s',
   onProgress: (progress) => console.log(progress),
-  printPaths: true,
-  onPaths: (paths) => console.log('Saved to:', paths),
 });
-```
-
-#### `download(url, options?)`
-
-Downloads synchronously, returning a `ChildProcess` with progress events.
-
-```typescript
-const process = ytdlp.download(url, { format: 'best' });
-process.on('progress', (p) => console.log(p));
-process.on('close', () => console.log('Done'));
 ```
 
 #### `downloadAudio(url, format?, options?)`
@@ -141,20 +194,39 @@ await ytdlp.downloadVideo(url, '1080p'); // 'best', '2160p', '1440p', '1080p', '
 
 #### `stream(url, options?)`
 
-Returns a stream for piping.
+Returns a fluent builder for streaming with chainable methods.
 
 ```typescript
-const ytdlpStream = ytdlp.stream(url, {
-  format: { filter: 'audioandvideo', type: 'mp4', quality: 'highest' },
-  onProgress: (p) => console.log(p),
-});
+import { createWriteStream } from 'fs';
+
+// Fluent builder API
+const result = await ytdlp
+  .stream('https://youtube.com/watch?v=...')
+  .format('audioandvideo')
+  .quality('highest')
+  .type('mp4')
+  .on('progress', (p) => console.log(p.percentage_str))
+  .pipeAsync(createWriteStream('video.mp4'));
+
+console.log(`Bytes: ${result.bytes}`);
 
 // Sync pipe
-ytdlpStream.pipe(writableStream);
+ytdlp.stream(url).format('audioandvideo').pipe(writableStream);
 
-// Async pipe
-await ytdlpStream.pipeAsync(writableStream);
+// Stream to buffer
+const buffer = await ytdlp.stream(url).format('audioonly').toBuffer();
 ```
+
+##### Stream Builder Methods
+
+| Method                                                                             | Description                              |
+| ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| `.filter()`, `.quality()`, `.type()`                                               | Set format options (same as Download)    |
+| `.pipe(dest, options?)`                                                            | Pipe to writable stream, returns Promise |
+| `.pipeAsync(dest, options?)`                                                       | Alias for `.pipe()`                      |
+| `.toBuffer()`                                                                      | Collect stream into Buffer               |
+| `.getStream()`                                                                     | Get underlying PassThrough stream        |
+| `.on('start' \| 'progress' \| 'beforeDownload' \| 'data' \| 'error' \| 'end', fn)` | Event listeners                          |
 
 #### `getFileAsync(url, options?)`
 
@@ -299,18 +371,6 @@ await ytdlp.execAsync(url, {
   verbose: true,
 });
 ```
-
-## Configuration
-
-CLI settings are stored in an OS-specific config file:
-
-| OS      | Path                                                     |
-| ------- | -------------------------------------------------------- |
-| macOS   | `~/Library/Application Support/ytdlp-nodejs/config.json` |
-| Linux   | `~/.config/ytdlp-nodejs/config.json`                     |
-| Windows | `%APPDATA%\ytdlp-nodejs\config.json`                     |
-
-Set `YTDLP_NODEJS_CONFIG_DIR` environment variable to override.
 
 ## Troubleshooting
 

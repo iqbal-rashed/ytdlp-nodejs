@@ -6,6 +6,7 @@ export function parsePrintedOutput(output: string): string {
     .filter((line) => line.length > 0)
     .filter((line) => !line.includes('__YTDLP_FILEPATH__:'))
     .filter((line) => !line.includes('__YTDLP_VIDEO_INFO__:'))
+    .filter((line) => !line.includes('__YTDLP_BEFORE_DL__:'))
     .join('\n');
 }
 
@@ -14,8 +15,10 @@ export function parsePrintedOutput(output: string): string {
  */
 export function parsePrintedVideoInfo(
   output: string,
-): Record<string, unknown> | null {
+): Record<string, unknown>[] {
+  const results: Record<string, unknown>[] = [];
   const lines = output.split(/\r?\n/);
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('__YTDLP_VIDEO_INFO__:')) {
@@ -79,11 +82,82 @@ export function parsePrintedVideoInfo(
             result[key] = value;
           }
         }
-        return result;
+        results.push(result);
       } catch {
-        return null;
+        // Skip invalid JSON entries
       }
     }
   }
-  return null;
+
+  return results;
+}
+
+/**
+ * Parses video info from a before_dl output line.
+ * Returns null if the line doesn't contain before_dl info.
+ */
+export function parseBeforeDownloadInfo(
+  line: string,
+): Record<string, unknown> | null {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith('__YTDLP_BEFORE_DL__:')) {
+    return null;
+  }
+
+  const jsonStr = trimmed.replace('__YTDLP_BEFORE_DL__:', '').trim();
+  try {
+    const cleanedJsonStr = jsonStr
+      .replace(/:"N\/A"/g, ':null')
+      .replace(/:"NA"/g, ':null')
+      .replace(/:""/, ':"NA"');
+    const parsed = JSON.parse(cleanedJsonStr);
+
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (value === 'NA' || value === 'N/A') {
+        result[key] = null;
+      } else if (
+        (key.includes('_count') ||
+          key.includes('_timestamp') ||
+          key === 'autonumber' ||
+          key === 'video_autonumber' ||
+          key === 'n_entries' ||
+          key === 'playlist_count' ||
+          key === 'release_year' ||
+          key === 'start_time' ||
+          key === 'end_time' ||
+          key === 'epoch' ||
+          key === 'duration' ||
+          key === 'age_limit') &&
+        typeof value === 'string'
+      ) {
+        const num = Number(value);
+        result[key] = isNaN(num) ? null : num;
+      } else if (
+        (key === 'is_live' ||
+          key === 'was_live' ||
+          key === 'channel_is_verified') &&
+        typeof value === 'string'
+      ) {
+        result[key] = value === 'true' || value === 'True';
+      } else if (
+        (key === 'categories' ||
+          key === 'tags' ||
+          key === 'creators' ||
+          key === 'cast') &&
+        typeof value === 'string'
+      ) {
+        if (value === 'NA' || value === 'N/A' || value === '') {
+          result[key] = null;
+        } else {
+          result[key] = value.split(',').map((s: string) => s.trim());
+        }
+      } else {
+        result[key] = value;
+      }
+    }
+    return result;
+  } catch {
+    return null;
+  }
 }
