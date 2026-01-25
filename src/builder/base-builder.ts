@@ -17,7 +17,6 @@ import { parseFormatOptions } from '../utils/format';
 import { findYtdlpBinary } from '../utils/ytdlp';
 import { findFFmpegBinary } from '../utils/ffmpeg';
 import fs from 'node:fs';
-import { BIN_DIR } from '../utils/paths';
 
 /**
  * Abstract base builder class with shared fluent API methods.
@@ -60,19 +59,6 @@ export abstract class BaseBuilder extends EventEmitter {
           `FFmpeg binary not found at: ${this.ffmpegPath}. Please install FFmpeg or specify correct ffmpegPath.`,
         ),
       );
-    }
-
-    // Only chmod binaries we downloaded (in our bin directory), not system binaries (issue #58)
-    if (
-      process.platform !== 'win32' &&
-      this.binaryPath &&
-      this.binaryPath.startsWith(BIN_DIR)
-    ) {
-      try {
-        fs.chmodSync(this.binaryPath, 0o755);
-      } catch {
-        // Silently ignore - binary may already have correct permissions
-      }
     }
   }
 
@@ -342,11 +328,30 @@ export abstract class BaseBuilder extends EventEmitter {
   }
 
   /**
+   * Enable debug printing of the command line before execution
+   */
+  debugPrint(enable: boolean = true): this {
+    this.extraArgs.debugPrintCommandLine = enable;
+    return this;
+  }
+
+  /**
    * Get the full command string (for debugging)
    */
   getCommand(): string {
     const args = this.buildArgs();
     return `${this.binaryPath} ${args.join(' ')}`;
+  }
+
+  /**
+   * Print the command line to stderr if debugPrintCommandLine is enabled
+   * Should be called before spawning the process
+   */
+  protected printDebugCommandLine(args: string[]): void {
+    if (this.extraArgs.debugPrintCommandLine) {
+      const command = `${this.binaryPath} ${args.join(' ')}`;
+      console.error(`[ytdlp-nodejs] Command: ${command}`);
+    }
   }
 
   /**

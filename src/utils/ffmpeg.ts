@@ -71,15 +71,11 @@ export async function downloadFFmpeg(out?: string) {
       await downloadFile(downloadUrl, outputPath);
     }
 
-    // Set executable permissions (Unix-like systems)
-    try {
+    // Set executable permissions (Unix-like systems only)
+    if (process.platform !== 'win32') {
       for (const outputPath of outputPaths) {
         fs.chmodSync(outputPath, 0o755);
       }
-    } catch {
-      console.log(
-        'Note: Could not set executable permissions (likely Windows)',
-      );
     }
 
     return findFFmpegBinary();

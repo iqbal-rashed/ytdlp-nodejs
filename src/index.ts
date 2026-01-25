@@ -106,19 +106,6 @@ export class YtDlp {
         ),
       );
     }
-
-    // Only chmod binaries we downloaded (in our bin directory), not system binaries (issue #58)
-    if (
-      process.platform !== 'win32' &&
-      this.binaryPath &&
-      this.binaryPath.startsWith(BIN_DIR)
-    ) {
-      try {
-        fs.chmodSync(this.binaryPath, 0o755);
-      } catch {
-        // Silently ignore - binary may already have correct permissions
-      }
-    }
   }
 
   /**

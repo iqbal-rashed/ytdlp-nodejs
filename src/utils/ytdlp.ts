@@ -60,10 +60,9 @@ export async function downloadYtDlp(out?: string): Promise<string> {
   try {
     await downloadFile(downloadUrl, outputPath);
     console.log(`yt-dlp downloaded successfully to: ${outputPath}`);
-    try {
+    // Set executable permissions (Unix-like systems only)
+    if (process.platform !== 'win32') {
       fs.chmodSync(outputPath, 0o755);
-    } catch {
-      console.log('Error while chmod');
     }
 
     return outputPath;

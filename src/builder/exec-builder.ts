@@ -198,6 +198,9 @@ export class Exec extends BaseBuilder {
     }
     const command = `${this.binaryPath} ${args.join(' ')}`;
 
+    // Print command line to stderr if debugPrintCommandLine is enabled
+    this.printDebugCommandLine(args);
+
     this.process = spawn(this.binaryPath, args, { shell: false });
     this.emit('start', command);
 
@@ -362,6 +365,9 @@ export class Exec extends BaseBuilder {
         this.validateBinaryPath();
         const args = this.buildArgs();
         const command = `${this.binaryPath} ${args.join(' ')}`;
+
+        // Print command line to stderr if debugPrintCommandLine is enabled
+        this.printDebugCommandLine(args);
 
         this.process = spawn(this.binaryPath, args, { shell: false });
         this.emit('start', command);
