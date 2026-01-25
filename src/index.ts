@@ -691,6 +691,7 @@ export class YtDlp {
 
     await this.execAsync(url, {
       ...execOptions,
+      noPlaylist: true,
       pipeTo: passThrough,
       onProgress,
       onBeforeDownload: (p) => {

@@ -12,6 +12,7 @@ async function getVideoFile() {
         onProgress: (progress) => {
           console.log(progress);
         },
+        format: { filter: 'mergevideo', quality: '1080p', type: 'mkv' },
         jsRuntime: 'node',
       },
     );
