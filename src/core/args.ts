@@ -32,7 +32,7 @@ export function buildYtDlpArgs({
   }
 
   if (url) {
-    args.push(url);
+    args.push('--', url);
   }
 
   return args;
