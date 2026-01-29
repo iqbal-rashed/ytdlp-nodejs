@@ -61,6 +61,19 @@ export class Download extends BaseBuilder {
   // Promise handling
   private resultPromise?: Promise<DownloadFinishResult>;
 
+  constructor(
+    url: string,
+    options?: {
+      binaryPath?: string;
+      ffmpegPath?: string;
+    },
+  ) {
+    super(url, options);
+
+    // If the error event in Node.js is not being monitored or causes an exception
+    this.on('error', () => {});
+  }
+
   /**
    * Add a typed event listener
    */
