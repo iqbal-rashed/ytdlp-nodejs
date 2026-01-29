@@ -61,6 +61,18 @@ export class Stream extends BaseBuilder {
   private totalBytes = 0;
   private started = false;
 
+  constructor(
+    url: string,
+    options?: {
+      binaryPath?: string;
+      ffmpegPath?: string;
+    },
+  ) {
+    super(url, options);
+    // Prevent uncaught exception when error event is emitted without listeners
+    this.on('error', () => {});
+  }
+
   /**
    * Add a typed event listener
    */

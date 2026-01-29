@@ -129,6 +129,18 @@ export class Exec extends BaseBuilder {
   // Promise handling for non-pipe mode
   private resultPromise?: Promise<ExecBuilderResult>;
 
+  constructor(
+    url: string,
+    options?: {
+      binaryPath?: string;
+      ffmpegPath?: string;
+    },
+  ) {
+    super(url, options);
+    // Prevent uncaught exception when error event is emitted without listeners
+    this.on('error', () => {});
+  }
+
   /**
    * Add a typed event listener
    */
