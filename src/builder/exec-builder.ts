@@ -456,6 +456,14 @@ export class Exec extends BaseBuilder {
         });
 
         this.process.on('close', (code: number | null) => {
+          // Check for errors in stderr (handles both non-zero exit codes and ERROR: patterns)
+          const error = checkForError(stderr, code);
+          if (error) {
+            this.emit('error', error);
+            reject(error);
+            return;
+          }
+
           const output = parsePrintedOutput(stdout);
           const info = parsePrintedVideoInfo(
             stdout,
