@@ -336,11 +336,46 @@ export abstract class BaseBuilder extends EventEmitter {
   }
 
   /**
-   * Get the full command string (for debugging)
+   * Get the full command string (for debugging).
+   * Can be used before calling run() to see exactly what will be executed.
+   *
+   * @example
+   * ```typescript
+   * const builder = ytdlp.download(url).filter('mergevideo');
+   * console.log(builder.getCommand()); // Shows: /path/to/yt-dlp --format ... url
+   * ```
    */
   getCommand(): string {
     const args = this.buildArgs();
     return `${this.binaryPath} ${args.join(' ')}`;
+  }
+
+  /**
+   * Get the command arguments array (for debugging).
+   * Returns only the arguments without the binary path.
+   *
+   * @example
+   * ```typescript
+   * const builder = ytdlp.download(url).filter('mergevideo');
+   * console.log(builder.getArguments()); // ['--format', '...', 'url']
+   * ```
+   */
+  getArguments(): string[] {
+    return this.buildArgs();
+  }
+
+  /**
+   * Returns the full command string.
+   * Alias for getCommand(), useful for string interpolation.
+   *
+   * @example
+   * ```typescript
+   * const builder = ytdlp.download(url);
+   * console.log(`Executing: ${builder}`); // Uses toString()
+   * ```
+   */
+  toString(): string {
+    return this.getCommand();
   }
 
   /**

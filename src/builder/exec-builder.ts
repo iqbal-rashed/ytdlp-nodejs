@@ -18,6 +18,7 @@ import {
   getDownloadPrintArgs,
 } from '../core/constants';
 import { spawn } from 'node:child_process';
+import { checkForError } from '../utils/errors';
 
 /**
  * Event map for exec builder events
@@ -138,7 +139,7 @@ export class Exec extends BaseBuilder {
   ) {
     super(url, options);
     // Prevent uncaught exception when error event is emitted without listeners
-    this.on('error', () => {});
+    this.on('error', () => { });
   }
 
   /**
@@ -274,8 +275,9 @@ export class Exec extends BaseBuilder {
     });
 
     this.process.on('close', (code: number | null) => {
-      if (code !== 0 && code !== null) {
-        const error = new Error(`yt-dlp exited with code ${code}`);
+      // Check for errors in stderr (handles both non-zero exit codes and ERROR: patterns)
+      const error = checkForError(this.output, code);
+      if (error) {
         this.emit('error', error);
         this.passThrough!.destroy(error);
       } else {

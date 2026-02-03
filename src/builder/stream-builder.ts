@@ -9,6 +9,7 @@ import { stringToProgress } from '../utils/progress';
 import { parseBeforeDownloadInfo } from '../core/parse';
 import { BaseBuilder } from './base-builder';
 import { buildBeforeDownloadPrintArg } from '../core/constants';
+import { checkForError } from '../utils/errors';
 import { spawn } from 'node:child_process';
 
 /**
@@ -70,7 +71,7 @@ export class Stream extends BaseBuilder {
   ) {
     super(url, options);
     // Prevent uncaught exception when error event is emitted without listeners
-    this.on('error', () => {});
+    this.on('error', () => { });
   }
 
   /**
@@ -142,8 +143,11 @@ export class Stream extends BaseBuilder {
       this.emit('data', chunk);
     });
 
+    let stderr = '';
     this.process.stderr?.on('data', (data: Buffer) => {
       const text = data.toString();
+      stderr += text;
+      this.emit('stderr', text);
       // Check for before_dl info
       const beforeInfo = parseBeforeDownloadInfo(text);
       if (beforeInfo) {
@@ -165,8 +169,9 @@ export class Stream extends BaseBuilder {
     });
 
     this.process.on('close', (code: number | null) => {
-      if (code !== 0 && code !== null) {
-        const error = new Error(`yt-dlp exited with code ${code}`);
+      // Check for errors in stderr (handles both non-zero exit codes and ERROR: patterns)
+      const error = checkForError(stderr, code);
+      if (error) {
         this.emit('error', error);
         this.passThrough!.destroy(error);
       } else {

@@ -15,6 +15,7 @@ import {
   parsePrintedOutput,
   parsePrintedVideoInfo,
 } from '../core/parse';
+import { checkForError } from '../utils/errors';
 import { BaseBuilder } from './base-builder';
 import {
   buildBeforeDownloadPrintArg,
@@ -71,7 +72,7 @@ export class Download extends BaseBuilder {
     super(url, options);
 
     // If the error event in Node.js is not being monitored or causes an exception
-    this.on('error', () => {});
+    this.on('error', () => { });
   }
 
   /**
@@ -217,10 +218,9 @@ export class Download extends BaseBuilder {
         });
 
         this.process.on('close', (code: number | null) => {
-          if (code !== 0 && code !== null) {
-            const error = new Error(
-              `yt-dlp exited with code ${code}: ${stderr}`,
-            );
+          // Check for errors in stderr (handles both non-zero exit codes and ERROR: patterns)
+          const error = checkForError(stderr, code);
+          if (error) {
             this.emit('error', error);
             reject(error);
             return;

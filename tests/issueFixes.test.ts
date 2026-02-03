@@ -60,5 +60,35 @@ describe('issue fixes', () => {
       expect(command).toContain('/path/to/yt-dlp');
       expect(command).toContain('https://example.com/video');
     });
+
+    test('getArguments() returns the command arguments array', () => {
+      const builder = new Download('https://example.com/video');
+      builder.setBinaryPath('/path/to/yt-dlp');
+
+      const args = builder.getArguments();
+      expect(Array.isArray(args)).toBe(true);
+      expect(args).toContain('https://example.com/video');
+      // Should not contain the binary path
+      expect(args).not.toContain('/path/to/yt-dlp');
+    });
+
+    test('toString() returns the full command string (same as getCommand)', () => {
+      const builder = new Download('https://example.com/video');
+      builder.setBinaryPath('/path/to/yt-dlp');
+
+      const str = builder.toString();
+      expect(str).toBe(builder.getCommand());
+      expect(str).toContain('/path/to/yt-dlp');
+    });
+
+    test('builder can be used in string interpolation via toString()', () => {
+      const builder = new Download('https://example.com/video');
+      builder.setBinaryPath('/path/to/yt-dlp');
+
+      // Template literal uses toString()
+      const message = `Executing: ${builder}`;
+      expect(message).toContain('/path/to/yt-dlp');
+      expect(message).toContain('https://example.com/video');
+    });
   });
 });
