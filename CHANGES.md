@@ -66,3 +66,5 @@ Tested end-to-end against a fake `yt-dlp` binary (a shell script) via `tsx`:
   with `&`/spaces, and single-quoted arguments).
 - `Download` and `Stream` builders were confirmed to **still** throw `"URL is required."` when the URL is
   empty (no regression).
+
+FIXED BY CODEPILOTBOT.
