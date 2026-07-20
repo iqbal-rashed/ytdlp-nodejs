@@ -186,7 +186,10 @@ export class Exec extends BaseBuilder {
       printArgs.push('--print', 'after_move:filepath');
     }
 
-    return this.buildBaseArgs([...baseArgs, ...printArgs]);
+    // Exec is a general-purpose runner used both for URL-based operations
+    // (info, download-like exec, etc.) and URL-less ones (--version, --update,
+    // --list-extractors, ...). It should not force a URL to be present.
+    return this.buildBaseArgs([...baseArgs, ...printArgs], false);
   }
 
   /**
