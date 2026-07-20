@@ -80,6 +80,50 @@ case on some setups; here it's just ignored).
 No files were added to git — the repository stays source-only as before; the build now simply happens
 automatically at install time instead of needing to be committed.
 
+## 4. Alternative install method: raw GitHub tarball URL (for hosts that block `git:`/`github:` installs)
+
+Some managed Node hosting panels (e.g. Pterodactyl-based bot/app hosts) disable npm's `git`-type installs
+entirely at the npm-config level, causing errors like:
+```
+npm error code EALLOWGIT
+npm error Fetching packages of type "git" have been disabled
+npm error Refusing to fetch "ytdlp-nodejs@github:owner/repo"
+```
+When this happens, the **entire** `npm install` aborts before anything is linked into `node_modules/` — so
+unrelated packages (like `express`) appear "missing" too, even though they were never the problem.
+
+npm classifies `"github:owner/repo"` / `"git+https://..."` as install type **`git`** (blocked by the host),
+but a plain HTTPS URL ending in `.tar.gz` is classified as type **`remote`** (a tarball), which is a
+different code path and is not affected by that restriction. You can point directly at a GitHub tarball
+instead:
+```json
+"ytdlp-nodejs": "https://codeload.github.com/CodePilotBot/ytdlp-nodejs-fc/tar.gz/refs/heads/main"
+```
+or equivalently:
+```json
+"ytdlp-nodejs": "https://github.com/CodePilotBot/ytdlp-nodejs-fc/archive/refs/heads/main.tar.gz"
+```
+
+**Important trade-off:** unlike a `git`-type install, a `remote` tarball install does **not** run the
+`prepare` script (no auto-build happens). This means `dist/` must already exist and be committed to the
+repository — it can no longer be gitignored/built-on-install for this specific use case. This is why a
+pre-built `dist/` folder is included in this delivery (see "How to commit it" below).
+
+### How to commit the pre-built `dist/`
+
+`.gitignore` still lists `dist`, so a normal `git add` will skip it. Force-add it explicitly:
+```bash
+git add -f dist
+git commit -m "chore: include prebuilt dist for tarball-URL installs"
+git push
+```
+(You can leave `dist` in `.gitignore` — `git add -f` overrides the ignore rule for files you explicitly add.
+Just remember to rebuild + re-commit `dist/` whenever you change files under `src/`.)
+
+The included `dist/` contains both the CommonJS build (`dist/index.js`, used by `require(...)`) and an ESM
+entry point (`dist/index.mjs`) that re-exports the same API, so it works whether your consuming project uses
+`require()` or `import` (`"type": "module"`), matching the `exports` map already defined in `package.json`.
+
 ## Verification
 
 Tested end-to-end against a fake `yt-dlp` binary (a shell script) via `tsx`:
