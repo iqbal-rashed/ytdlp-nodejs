@@ -57,6 +57,29 @@ like `&`, `;`, `|`, etc. (those are treated as literal text, not interpreted by 
 
 Return value: `{ stdout, stderr, exitCode, command }`.
 
+## 3. Fix: package now works when installed via `github:` / git URL
+
+**Root cause:** `package.json` points `"main"` to `./dist/index.js`, but `dist/` is listed in `.gitignore`
+(it's built locally and only ends up in the published npm tarball, never in the git history). When you
+install a package via `"ytdlp-nodejs": "github:user/repo"`, npm builds it right after cloning by running the
+package's `prepare` script — but this repo's `prepare` script was just `"husky"` (git-hooks setup for local
+dev), not a build step. So `dist/` never got created for git installs, and `require('ytdlp-nodejs')` /
+`import ... from 'ytdlp-nodejs'` would fail with `Cannot find module './dist/index.js'`.
+
+**Fix:** `package.json`:
+```diff
+- "prepare": "husky",
++ "prepare": "npm run build && (husky || true)",
+```
+Now `npm install github:CodePilotBot/ytdlp-nodejs-fc` (or any git URL) runs the real build (`tsup`) before
+the package is usable, so `dist/` gets generated automatically as part of the install. Husky still runs
+afterwards for local development clones as before, wrapped in `(... || true)` so it can never fail/block an
+install for consumers who install via git and don't have a `.git` context (husky exits non-zero in that
+case on some setups; here it's just ignored).
+
+No files were added to git — the repository stays source-only as before; the build now simply happens
+automatically at install time instead of needing to be committed.
+
 ## Verification
 
 Tested end-to-end against a fake `yt-dlp` binary (a shell script) via `tsx`:
