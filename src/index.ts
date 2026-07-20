@@ -616,10 +616,199 @@ export class YtDlp {
    * @returns Promise resolving to version string
    */
   public async getVersionAsync(): Promise<string> {
-    const result = await this.execAsync('', {
-      printVersion: true,
+    const result = await this.execYtdlpCmd(['--version']);
+    if (result.exitCode !== 0 && result.exitCode !== null) {
+      throw new Error(
+        `Failed to get yt-dlp version: ${result.stderr || result.stdout}`,
+      );
+    }
+    return result.stdout.trim();
+  }
+
+  /**
+   * Executes the yt-dlp binary directly with raw command-line arguments.
+   *
+   * Unlike `execAsync()` / `exec()`, this does NOT go through the fluent
+   * builder (no URL is required, no format/progress args are injected).
+   * Use it for simple, direct invocations of yt-dlp such as `--version`,
+   * `--update`, `--list-extractors`, `--dump-user-agent`, etc., or for any
+   * custom argument list you want to run as-is.
+   *
+   * @param args - Raw arguments to pass to the yt-dlp binary (e.g. `['--version']`)
+   * @param options - Optional spawn options (cwd, env, timeoutMs)
+   * @returns Promise resolving to stdout/stderr/exitCode/command
+   *
+   * @example
+   * ```typescript
+   * const { stdout } = await ytdlp.execYtdlpCmd(['--version']);
+   * console.log(stdout.trim());
+   *
+   * // List all supported extractors
+   * const result = await ytdlp.execYtdlpCmd(['--list-extractors']);
+   * console.log(result.stdout);
+   *
+   * // Run any custom command
+   * await ytdlp.execYtdlpCmd(['--update-to', 'nightly']);
+   * ```
+   */
+  /**
+   * Executes the yt-dlp binary directly with raw command-line arguments.
+   *
+   * Unlike `execAsync()` / `exec()`, this does NOT go through the fluent
+   * builder (no URL is required, no format/progress args are injected).
+   * Use it for simple, direct invocations of yt-dlp such as `--version`,
+   * `--update`, `--list-extractors`, `--dump-user-agent`, etc., or for any
+   * custom argument list you want to run as-is.
+   *
+   * Accepts either an argv array or a single command string. When a string
+   * is given, it is tokenized shell-style (respecting `"..."` / `'...'`
+   * quoting so a quoted URL with `&`/spaces stays intact) and executed
+   * WITHOUT a shell (`shell: false`), so there's no shell-injection risk.
+   *
+   * @param command - Raw arguments as an array (`['--version']`) or a
+   *   single string (`'--version'`, `'"https://youtu.be/xyz" -F'`)
+   * @param options - Optional spawn options (cwd, env, timeoutMs)
+   * @returns Promise resolving to stdout/stderr/exitCode/command
+   *
+   * @example
+   * ```typescript
+   * // Array form
+   * const { stdout } = await ytdlp.execYtdlpCmd(['--version']);
+   * console.log(stdout.trim());
+   *
+   * // String form - equivalent to the array above
+   * await ytdlp.execYtdlpCmd('-U');
+   * await ytdlp.execYtdlpCmd('"https://youtu.be/xyz" --formats');
+   *
+   * // Run any custom command
+   * await ytdlp.execYtdlpCmd(['--update-to', 'nightly']);
+   * ```
+   */
+  public execYtdlpCmd(
+    command: string | string[],
+    options?: {
+      cwd?: string;
+      env?: NodeJS.ProcessEnv;
+      timeoutMs?: number;
+    },
+  ): Promise<{
+    stdout: string;
+    stderr: string;
+    exitCode: number | null;
+    command: string;
+  }> {
+    const args =
+      typeof command === 'string'
+        ? YtDlp.tokenizeCommand(command)
+        : command;
+
+    return new Promise((resolve, reject) => {
+      if (!this.binaryPath) {
+        reject(
+          new Error(
+            'Binary path is required. yt-dlp binary not found or not configured. Pass `binaryPath` in the YtDlp constructor, or run downloadYtDlp() first.',
+          ),
+        );
+        return;
+      }
+
+      const commandStr = `${this.binaryPath} ${args.join(' ')}`;
+      const child = spawn(this.binaryPath, args, {
+        cwd: options?.cwd,
+        env: options?.env,
+        shell: false,
+      });
+
+      let stdout = '';
+      let stderr = '';
+      let timeoutHandle: NodeJS.Timeout | undefined;
+      let timedOut = false;
+
+      if (options?.timeoutMs) {
+        timeoutHandle = setTimeout(() => {
+          timedOut = true;
+          child.kill();
+        }, options.timeoutMs);
+      }
+
+      child.stdout?.on('data', (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      child.stderr?.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      child.on('error', (error: Error) => {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        reject(error);
+      });
+
+      child.on('close', (code: number | null) => {
+        if (timeoutHandle) clearTimeout(timeoutHandle);
+        if (timedOut) {
+          reject(
+            new Error(
+              `yt-dlp command timed out after ${options?.timeoutMs}ms: ${commandStr}`,
+            ),
+          );
+          return;
+        }
+        resolve({ stdout, stderr, exitCode: code, command: commandStr });
+      });
     });
-    return result.output.trim();
+  }
+
+  /**
+   * Tokenizes a shell-like command string into an argv array, respecting
+   * single and double quotes (so a quoted URL containing spaces or `&`
+   * stays as one argument). Used internally by `execYtdlpCmd()` when a
+   * string is passed instead of an array. This does NOT invoke a shell,
+   * so shell metacharacters (`|`, `;`, `$(...)`, etc.) are treated as
+   * literal characters, not interpreted.
+   */
+  private static tokenizeCommand(input: string): string[] {
+    const args: string[] = [];
+    let current = '';
+    let quoteChar: '"' | "'" | null = null;
+    let hasToken = false;
+
+    for (let i = 0; i < input.length; i++) {
+      const char = input[i];
+
+      if (quoteChar) {
+        if (char === quoteChar) {
+          quoteChar = null;
+        } else {
+          current += char;
+        }
+        continue;
+      }
+
+      if (char === '"' || char === "'") {
+        quoteChar = char;
+        hasToken = true;
+        continue;
+      }
+
+      if (/\s/.test(char)) {
+        if (hasToken) {
+          args.push(current);
+          current = '';
+          hasToken = false;
+        }
+        continue;
+      }
+
+      current += char;
+      hasToken = true;
+    }
+
+    if (hasToken) {
+      args.push(current);
+    }
+
+    return args;
   }
 
   /**
@@ -748,7 +937,7 @@ export class YtDlp {
 
     if (preferBuiltIn && this.binaryPath) {
       try {
-        await this.execAsync('', { update: true });
+        await this.execYtdlpCmd(['--update']);
         const version = await this.getVersionAsync().catch(() => undefined);
         return {
           method: 'built-in',

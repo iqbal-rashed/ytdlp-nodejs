@@ -311,9 +311,13 @@ export abstract class BaseBuilder extends EventEmitter {
 
   /**
    * Build base yt-dlp arguments (common to all operations)
+   * @param extra - Extra arguments to append
+   * @param requireUrl - Whether a URL is required for this operation (default: true).
+   *   Subclasses that also support URL-less operations (e.g. `--version`, `--update`)
+   *   should pass `false` to skip the validation.
    */
-  protected buildBaseArgs(extra: string[] = []): string[] {
-    if (!this.videoUrl) {
+  protected buildBaseArgs(extra: string[] = [], requireUrl = true): string[] {
+    if (requireUrl && !this.videoUrl) {
       throw new Error('URL is required.');
     }
 
