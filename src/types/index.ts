@@ -156,10 +156,27 @@ export interface VideoFormat {
   height?: number;
   resolution?: string;
   filesize?: number;
+  /** Estimated size in bytes when the exact size is not available. */
+  filesize_approx?: number;
   tbr?: number;
+  abr?: number;
+  vbr?: number;
+  fps?: number;
+  audio_channels?: number;
+  dynamic_range?: string;
+  language?: string;
+  language_preference?: number;
+  format?: string;
+  format_index?: string;
+  preference?: number;
+  quality?: number;
+  source_preference?: number;
+  has_drm?: boolean;
   protocol: string;
   vcodec: string;
   acodec: string;
+  /** yt-dlp adds fields over time; preserve access to unmodelled metadata. */
+  [key: string]: unknown;
 }
 
 /**
@@ -587,4 +604,6 @@ export interface SubtitleInfo {
   languages: string[];
   ext: string;
   autoCaption: boolean;
+  url?: string;
+  name?: string;
 }

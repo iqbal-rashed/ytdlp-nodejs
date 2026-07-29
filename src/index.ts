@@ -516,15 +516,46 @@ export class YtDlp {
   ): Promise<SubtitleInfo[]> {
     const result = await this.execAsync(url, {
       ...options,
-      listSubs: true,
+      dumpSingleJson: true,
       skipDownload: true,
     });
 
     if (!result.output) return [];
 
-    // Parse output for subtitles - this is a simplified parser
-    // Real implementation would need robust parsing of list-subs output
-    return [];
+    try {
+      const info = JSON.parse(result.output) as {
+        subtitles?: Record<string, unknown>;
+        automatic_captions?: Record<string, unknown>;
+      };
+      const collect = (
+        subtitles: Record<string, unknown> | undefined,
+        autoCaption: boolean,
+      ): SubtitleInfo[] =>
+        Object.entries(subtitles || {}).flatMap(([language, tracks]) => {
+          if (!Array.isArray(tracks)) return [];
+          return tracks.flatMap((track): SubtitleInfo[] => {
+            if (!track || typeof track !== 'object') return [];
+            const value = track as Record<string, unknown>;
+            const ext = value.ext;
+            if (typeof ext !== 'string') return [];
+            return [{
+              language,
+              languages: [language],
+              ext,
+              autoCaption,
+              ...(typeof value.url === 'string' ? { url: value.url } : {}),
+              ...(typeof value.name === 'string' ? { name: value.name } : {}),
+            }];
+          });
+        });
+
+      return [
+        ...collect(info.subtitles, false),
+        ...collect(info.automatic_captions, true),
+      ];
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -616,10 +647,10 @@ export class YtDlp {
    * @returns Promise resolving to version string
    */
   public async getVersionAsync(): Promise<string> {
-    const result = await this.execAsync('', {
-      printVersion: true,
-    });
-    return result.output.trim();
+    if (!this.binaryPath) {
+      throw new Error('yt-dlp binary path is not set');
+    }
+    return this.getVersionAsyncUsingBinary(this.binaryPath);
   }
 
   /**

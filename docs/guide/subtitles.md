@@ -59,3 +59,11 @@ const info = await ytdlp.getInfoAsync(url);
 console.log('Manual subs:', Object.keys(info.subtitles || {}));
 console.log('Auto subs:', Object.keys(info.automatic_captions || {}));
 ```
+
+Or use `getSubtitles()` for a normalized list. Manual subtitles and automatic
+captions are both returned; use `autoCaption` to distinguish them:
+
+```typescript
+const subtitles = await ytdlp.getSubtitles(url);
+console.log(subtitles.filter((subtitle) => !subtitle.autoCaption));
+```

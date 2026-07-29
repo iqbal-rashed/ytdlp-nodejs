@@ -32,6 +32,15 @@ await ytdlp.downloadAsync(url, {
 });
 ```
 
+The same `cookies` option works with `getInfoAsync`, `getFormatsAsync`,
+`getComments`, downloads, streams, and fluent builders:
+
+```typescript
+const info = await ytdlp.getInfoAsync(url, {
+  cookies: '/path/to/cookies.txt',
+});
+```
+
 ### Exporting Cookies
 
 Use a browser extension like "Get cookies.txt" to export your cookies.
@@ -106,3 +115,8 @@ await ytdlp.downloadAsync(url, {
 ### Cookie Permission Errors
 
 On some systems, you may need elevated permissions to access browser cookies. Run your script with appropriate permissions or use a cookie file instead.
+
+On Linux, `cookiesFromBrowser('chrome')` may require the desktop keyring
+dependency used by yt-dlp (for example Python's `secretstorage`). This is an
+yt-dlp/browser integration requirement; using an exported Netscape cookie file
+avoids browser-keyring access and is often the better choice for Electron apps.

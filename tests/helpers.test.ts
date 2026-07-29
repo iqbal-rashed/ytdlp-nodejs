@@ -74,15 +74,56 @@ describe('Convenience Methods', () => {
   });
 
   describe('getSubtitles', () => {
-    it('should use list-subs and skip-download', async () => {
+    it('should request metadata and return manual and automatic subtitle tracks', async () => {
+      execAsyncSpy.mockResolvedValueOnce({
+        stdout: '',
+        stderr: '',
+        exitCode: 0,
+        command: '',
+        output: JSON.stringify({
+          subtitles: {
+            en: [{ ext: 'vtt', url: 'https://example.com/en.vtt', name: 'English' }],
+          },
+          automatic_captions: {
+            es: [{ ext: 'json3', url: 'https://example.com/es.json3' }],
+          },
+        }),
+      });
+
+      await expect(
+        ytdlp.getSubtitles('https://www.youtube.com/watch?v=123'),
+      ).resolves.toEqual([
+        {
+          language: 'en',
+          languages: ['en'],
+          ext: 'vtt',
+          autoCaption: false,
+          url: 'https://example.com/en.vtt',
+          name: 'English',
+        },
+        {
+          language: 'es',
+          languages: ['es'],
+          ext: 'json3',
+          autoCaption: true,
+          url: 'https://example.com/es.json3',
+        },
+      ]);
       await ytdlp.getSubtitles('https://www.youtube.com/watch?v=123');
       expect(execAsyncSpy).toHaveBeenCalledWith(
         'https://www.youtube.com/watch?v=123',
         {
-          listSubs: true,
+          dumpSingleJson: true,
           skipDownload: true,
         },
       );
+    });
+
+    it('should return an empty array when metadata is not JSON', async () => {
+      execAsyncSpy.mockResolvedValueOnce({
+        stdout: '', stderr: '', exitCode: 0, command: '', output: 'not json',
+      });
+      await expect(ytdlp.getSubtitles('https://example.com')).resolves.toEqual([]);
     });
   });
 
@@ -100,6 +141,23 @@ describe('Convenience Methods', () => {
           },
         }),
       );
+    });
+  });
+
+  describe('getVersionAsync', () => {
+    it('uses the binary version probe without constructing a URL-based command', async () => {
+      const versionSpy = jest
+        .spyOn(
+          ytdlp as unknown as {
+            getVersionAsyncUsingBinary: (path: string) => Promise<string>;
+          },
+          'getVersionAsyncUsingBinary',
+        )
+        .mockResolvedValue('2026.07.27');
+
+      await expect(ytdlp.getVersionAsync()).resolves.toBe('2026.07.27');
+      expect(versionSpy).toHaveBeenCalledWith(ytdlp.binaryPath);
+      expect(execAsyncSpy).not.toHaveBeenCalled();
     });
   });
 });

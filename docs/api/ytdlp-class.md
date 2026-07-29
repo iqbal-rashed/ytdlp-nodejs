@@ -112,6 +112,32 @@ Gets all thumbnails for a video.
 getThumbnailsAsync(url: string): Promise<VideoThumbnail[]>
 ```
 
+### `getSubtitles`
+
+Returns the available manual subtitles and automatic captions as normalized
+`SubtitleInfo` records.
+
+```typescript
+getSubtitles(url: string, options?: ArgsOptions): Promise<SubtitleInfo[]>
+```
+
+### `getComments`
+
+Fetches comments exposed by the extractor. `maxComments` limits the requested
+number of YouTube comments.
+
+```typescript
+getComments(url: string, maxComments?: number, options?: ArgsOptions): Promise<unknown[]>
+```
+
+### `getVersionAsync`
+
+Returns the version reported by the configured yt-dlp binary.
+
+```typescript
+getVersionAsync(): Promise<string>
+```
+
 ### `checkInstallationAsync`
 
 Checks if binaries are installed.
