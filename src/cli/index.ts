@@ -13,15 +13,15 @@ import { runCommand } from './commands';
 async function main(): Promise<void> {
   const { command, positionals, options } = parseCliArgs(process.argv.slice(2));
 
-  // No command = interactive mode
-  if (!command) {
-    await runInteractive();
+  // Help command (check before interactive  -  see src/cli/utils.ts:206 printUsage)
+  if (options.help || options.h || command === 'help' || command === '--help') {
+    printUsage();
     return;
   }
 
-  // Help command
-  if (options.help || command === 'help') {
-    printUsage();
+  // No command = interactive mode
+  if (!command) {
+    await runInteractive();
     return;
   }
 

@@ -94,6 +94,11 @@ export function parseCliArgs(argv: string[]): {
     normalized[toCamelCase(key)] = value;
   }
 
+  // --name alias for --output (yoinks PR #15)
+  if (normalized.name && !normalized.output) {
+    normalized.output = normalized.name;
+  }
+
   if (normalized.raw) {
     const raw = normalized.raw;
     if (Array.isArray(raw)) {
@@ -154,30 +159,63 @@ export function buildArgsOptions(
 ): ArgsOptions {
   const options: ArgsOptions = {};
 
-  if (cliOptions.output) options.output = String(cliOptions.output);
-  if (cliOptions.proxy) options.proxy = String(cliOptions.proxy);
+  // --name alias → output (yoinks PR #15), --name wins if both
+  const out = cliOptions.name ?? cliOptions.output;
+  if (out) options.output = String(out);
+
+  if (cliOptions.mergeOutputFormat)
+    options.mergeOutputFormat = String(cliOptions.mergeOutputFormat);
+
+  // Auth / cookies
   if (cliOptions.cookies) options.cookies = String(cliOptions.cookies);
   if (cliOptions.cookiesFromBrowser)
     options.cookiesFromBrowser = String(cliOptions.cookiesFromBrowser);
+
+  // Subtitles
+  if (cliOptions.writeSubs) options.writeSubs = true;
+  if (cliOptions.writeAutoSubs) options.writeAutoSubs = true;
+  if (cliOptions.subLangs) {
+    const raw = String(cliOptions.subLangs);
+    options.subLangs = raw
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean);
+  }
+
+  // Post-processing / embeds
+  if (cliOptions.embedSubs) options.embedSubs = true;
+  if (cliOptions.embedThumbnail) options.embedThumbnail = true;
+  if (cliOptions.embedMetadata) options.embedMetadata = true;
+  if (cliOptions.embedChapters) options.embedChapters = true;
+
+  // Network
+  if (cliOptions.proxy) options.proxy = String(cliOptions.proxy);
   if (cliOptions.socketTimeout)
     options.socketTimeout = Number(cliOptions.socketTimeout);
+
+  // Playlist
+  if (cliOptions.playlistItems)
+    options.playlistItems = String(cliOptions.playlistItems);
+  if (cliOptions.noPlaylist) options.noPlaylist = true;
+  if (cliOptions.yesPlaylist) options.yesPlaylist = true;
+
+  // Download tuning
+  if (cliOptions.limitRate) options.limitRate = String(cliOptions.limitRate);
   if (cliOptions.concurrentFragments)
     options.concurrentFragments = Number(cliOptions.concurrentFragments);
   if (cliOptions.retries) options.retries = Number(cliOptions.retries);
   if (cliOptions.retrySleep) options.retrySleep = Number(cliOptions.retrySleep);
-  if (cliOptions.limitRate) options.limitRate = String(cliOptions.limitRate);
+
+  // Download sections / format sort
   if (cliOptions.downloadSections)
     options.downloadSections = String(cliOptions.downloadSections);
-  if (cliOptions.playlistItems)
-    options.playlistItems = String(cliOptions.playlistItems);
-  if (cliOptions.noPlaylist) options.noPlaylist = true;
   if (cliOptions.formatSort)
     options.formatSort = String(cliOptions.formatSort)
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean);
-  if (cliOptions.mergeOutputFormat)
-    options.mergeOutputFormat = String(cliOptions.mergeOutputFormat);
+
+  // Passthrough
   if (cliOptions.raw) options.rawArgs = cliOptions.raw as string[];
   if (cliOptions.verbose) options.verbose = true;
 
@@ -215,9 +253,35 @@ ${Style.warning('Usage:')}
   ${color('ytdlp ffmpeg', Colors.fg.green)}              Download FFmpeg binaries
   ${color('ytdlp version', Colors.fg.green)}             Show version
 
-${Style.warning('Options:')}
-  ${color('--output', Colors.fg.cyan)} <template>     Output filename template
-  ${color('--quality', Colors.fg.cyan)} <q>           Video quality (1080p, 720p, etc)
+${Style.warning('Download Options:')}
+  ${color('--output', Colors.fg.cyan)} <tpl>         ${color('--name', Colors.fg.cyan)} alias  Output template (e.g. "%(title)s.%(ext)s")
+  ${color('--merge-output-format', Colors.fg.cyan)} <fmt>  Container for merged streams (mp4/mkv/webm)
+  ${color('--limit-rate', Colors.fg.cyan)} <rate>        Throttle download rate (e.g. 500K, 1M)
+  ${color('--retries', Colors.fg.cyan)} <n>            Number of retries (default: 10)
+  ${color('--concurrent-fragments', Colors.fg.cyan)} <n> Concurrent fragment downloads
+  ${color('--proxy', Colors.fg.cyan)} <url>              Use HTTP/HTTPS/SOCKS proxy
+
+${Style.warning('Playlist Options:')}
+  ${color('--playlist-items', Colors.fg.cyan)} <spec>    Items to download (e.g. 1,3,5-7)
+  ${color('--no-playlist', Colors.fg.cyan)}              Download only the video if URL is playlist
+
+${Style.warning('Authentication:')}
+  ${color('--cookies', Colors.fg.cyan)} <file>           Cookies file
+  ${color('--cookies-from-browser', Colors.fg.cyan)} <browser>  Extract cookies from browser
+
+${Style.warning('Subtitles:')}
+  ${color('--write-subs', Colors.fg.cyan)}               Write subtitle files
+  ${color('--write-auto-subs', Colors.fg.cyan)}          Write auto-generated subs
+  ${color('--sub-langs', Colors.fg.cyan)} <langs>        Subtitle languages (e.g. en,ja)
+
+${Style.warning('Post-processing:')}
+  ${color('--embed-subs', Colors.fg.cyan)}               Embed subtitles in video file
+  ${color('--embed-thumbnail', Colors.fg.cyan)}          Embed thumbnail
+  ${color('--embed-metadata', Colors.fg.cyan)}           Embed metadata
+  ${color('--embed-chapters', Colors.fg.cyan)}           Embed chapters
+
+${Style.warning('General:')}
+  ${color('--quality', Colors.fg.cyan)} <q>           Video quality (1080p, 720p, best/worst, etc)
   ${color('--verbose', Colors.fg.cyan)}               Enable verbose logging
 `);
 }
