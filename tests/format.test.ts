@@ -13,7 +13,10 @@ describe('format utilities', () => {
     });
 
     test('returns -f flag for string format', () => {
-      expect(parseFormatOptions('best')).toEqual(['-f', 'best']);
+      expect(parseFormatOptions('best')).toEqual([
+        '-f',
+        'bestvideo+bestaudio/best',
+      ]);
     });
 
     test('returns audio extraction args for audioonly filter', () => {

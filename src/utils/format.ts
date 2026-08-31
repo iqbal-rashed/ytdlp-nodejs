@@ -1,6 +1,6 @@
 import { FormatKeyWord, FormatOptions } from '../types';
 
-const ByQuality = {
+const ByQuality: Record<string, string> = {
   '2160p': 'bv*[height<=2160]',
   '1440p': 'bv*[height<=1440]',
   '1080p': 'bv*[height<=1080]',
@@ -9,209 +9,77 @@ const ByQuality = {
   '360p': 'bv*[height<=360]',
   '240p': 'bv*[height<=240]',
   '144p': 'bv*[height<=133]',
+  best: 'bv*',
+  worst: 'wv*',
   highest: 'bv*',
   lowest: 'wv*',
 };
 
-const ByFilter = ['audioonly', 'videoonly', 'audioandvideo', 'mergevideo'];
+const FilterSet = new Set(['audioonly', 'videoonly', 'audioandvideo', 'mergevideo']);
+const bestExpr = 'bestvideo+bestaudio/best';
+const worstExpr = 'worstvideo+worstaudio/worst';
 
-export function parseFormatOptions<T extends FormatKeyWord>(
-  format?: FormatOptions<T>['format'] | string,
-) {
-  let filter: string | undefined;
-  let type: string | undefined;
-  let quality: string | number | undefined;
-  if (!format) {
-    return [];
+export function parseFormatOptions<T extends FormatKeyWord>(format?: FormatOptions<T>['format'] | string) {
+  if (!format) return [];
+
+  if (typeof format === 'string') {
+    if (format === 'best') return ['-f', bestExpr];
+    if (format === 'worst') return ['-f', worstExpr];
+    if (!FilterSet.has(format)) return ['-f', format];
   }
 
-  if (typeof format === 'string' && !ByFilter.includes(format)) {
-    return ['-f', format];
+  if (typeof format === 'string' && FilterSet.has(format)) {
+    // bare filter keyword -> treat as filter object with defaults
+    if (format === 'audioonly') return ['-x', '--audio-format', 'mp3', '--audio-quality', '5'];
+    if (format === 'videoonly') return ['-f', 'bv*[acodec=none]'];
+    if (format === 'audioandvideo') return ['-f', 'b*[vcodec!=none][acodec!=none][ext=mp4]'];
+    if (format === 'mergevideo') return ['-f', 'bv*+ba'];
   }
 
-  if (typeof format === 'string' && ByFilter.includes(format)) {
-    filter = format;
-  }
+  if (!format || typeof format !== 'object' || Object.keys(format).length === 0) return ['-f', 'bv*+ba'];
 
-  if (
-    Object.keys(format).length === 0 ||
-    !format ||
-    typeof format !== 'object'
-  ) {
-    return ['-f', 'bv*+ba'];
-  }
+  const { filter, type, quality } = format as { filter?: string; type?: string; quality?: string | number };
 
-  if (typeof format === 'object') {
-    filter = format.filter;
-    type = format.type;
-    quality = format.quality;
-  }
-
-  let formatArr: string[] = [];
-
-  if (filter === 'audioonly') {
-    formatArr = [
-      '-x',
-      '--audio-format',
-      type ? type : 'mp3',
-      '--audio-quality',
-      quality ? quality.toString() : '5',
-    ];
-  }
-
-  if (filter === 'videoonly') {
-    formatArr = [
-      '-f',
-      (quality ? ByQuality[quality as keyof typeof ByQuality] : 'bv*') +
-        '[acodec=none]',
-    ];
-  }
-
-  if (filter === 'audioandvideo') {
-    formatArr = [
-      '-f',
-      (quality == 'lowest' ? 'w*' : 'b*') +
-        '[vcodec!=none][acodec!=none][ext=' +
-        (type ? type : 'mp4') +
-        ']',
-    ];
-  }
-
+  if (filter === 'audioonly') return ['-x', '--audio-format', type || 'mp3', '--audio-quality', quality?.toString() || '5'];
+  if (filter === 'videoonly') return ['-f', `${quality ? ByQuality[quality as string] || 'bv*' : 'bv*'}[acodec=none]`];
+  if (filter === 'audioandvideo')
+    return ['-f', `${quality === 'lowest' ? 'w*' : 'b*'}[vcodec!=none][acodec!=none][ext=${type || 'mp4'}]`];
   if (filter === 'mergevideo') {
-    const videoQuality = quality
-      ? ByQuality[quality as keyof typeof ByQuality]
-      : 'bv*';
-
-    formatArr = ['-f', `${videoQuality}+ba`];
-
-    if (type) {
-      formatArr.push('--merge-output-format', type);
-    }
+    const expr = quality === 'best' ? bestExpr : quality === 'worst' ? worstExpr : `${quality ? ByQuality[quality as string] || 'bv*' : 'bv*'}+ba`;
+    return type ? ['-f', expr, '--merge-output-format', type] : ['-f', expr];
   }
 
-  return formatArr;
+  return [];
 }
 
-export function getContentType(
-  format?: FormatOptions<FormatKeyWord>['format'],
-): string {
-  if (!format || typeof format === 'string') {
-    return 'video/mp4';
-  }
-
-  const { filter, type } = format as {
-    filter: FormatKeyWord;
-    type?: string;
-  };
-
+export function getContentType(format?: FormatOptions<FormatKeyWord>['format']): string {
+  if (!format || typeof format === 'string') return 'video/mp4';
+  const { filter, type } = format as { filter: FormatKeyWord; type?: string };
   switch (filter) {
     case 'videoonly':
     case 'audioandvideo':
-      switch (type) {
-        case 'mp4':
-          return 'video/mp4';
-        case 'webm':
-          return 'video/webm';
-        default:
-          return 'video/mp4';
-      }
+      return type === 'webm' ? 'video/webm' : 'video/mp4';
     case 'audioonly':
-      switch (type) {
-        case 'aac':
-          return 'audio/aac';
-        case 'flac':
-          return 'audio/flac';
-        case 'mp3':
-          return 'audio/mp3';
-        case 'm4a':
-          return 'audio/mp4';
-        case 'opus':
-          return 'audio/opus';
-        case 'vorbis':
-          return 'audio/vorbis';
-        case 'wav':
-          return 'audio/wav';
-        case 'alac':
-          return 'audio/mp4';
-        default:
-          return 'audio/mpeg';
-      }
+      return (
+        ({ aac: 'audio/aac', flac: 'audio/flac', mp3: 'audio/mp3', m4a: 'audio/mp4', opus: 'audio/opus', vorbis: 'audio/vorbis', wav: 'audio/wav', alac: 'audio/mp4' } as Record<string, string>)[type || ''] || 'audio/mpeg'
+      );
     case 'mergevideo':
-      switch (type) {
-        case 'webm':
-          return 'video/webm';
-        case 'mkv':
-          return 'video/x-matroska';
-        case 'ogg':
-          return 'video/ogg';
-        case 'flv':
-          return 'video/x-flv';
-        default:
-          return 'video/mp4';
-      }
+      return ({ webm: 'video/webm', mkv: 'video/x-matroska', ogg: 'video/ogg', flv: 'video/x-flv' } as Record<string, string>)[type || ''] || 'video/mp4';
   }
 }
 
-export function getFileExtension(
-  format?: FormatOptions<FormatKeyWord>['format'],
-): string {
-  if (!format || typeof format === 'string') {
-    return 'mp4';
-  }
-
+export function getFileExtension(format?: FormatOptions<FormatKeyWord>['format']): string {
+  if (!format || typeof format === 'string') return 'mp4';
   const { filter, type } = format as { filter: FormatKeyWord; type?: string };
-
-  if (type) {
-    return type;
-  }
-
-  return filter === 'audioonly' ? 'mp3' : 'mp4';
+  return type || (filter === 'audioonly' ? 'mp3' : 'mp4');
 }
 
-/**
- * Gets the content type when extractAudio option is used (legacy args style).
- * Fixes issue #43 where getFileAsync returns video MIME type for audio extraction.
- */
-export function getContentTypeFromArgs(options?: {
-  extractAudio?: boolean;
-  audioFormat?: string;
-}): string | null {
-  if (!options?.extractAudio) {
-    return null; // Not extracting audio, use default behavior
-  }
-
-  const audioFormat = options.audioFormat || 'mp3';
-  switch (audioFormat) {
-    case 'aac':
-      return 'audio/aac';
-    case 'flac':
-      return 'audio/flac';
-    case 'mp3':
-      return 'audio/mpeg';
-    case 'm4a':
-      return 'audio/mp4';
-    case 'opus':
-      return 'audio/opus';
-    case 'vorbis':
-      return 'audio/vorbis';
-    case 'wav':
-      return 'audio/wav';
-    case 'alac':
-      return 'audio/mp4';
-    default:
-      return 'audio/mpeg';
-  }
+export function getContentTypeFromArgs(options?: { extractAudio?: boolean; audioFormat?: string }): string | null {
+  if (!options?.extractAudio) return null;
+  const m: Record<string, string> = { aac: 'audio/aac', flac: 'audio/flac', mp3: 'audio/mpeg', m4a: 'audio/mp4', opus: 'audio/opus', vorbis: 'audio/vorbis', wav: 'audio/wav', alac: 'audio/mp4' };
+  return m[options.audioFormat || 'mp3'] || 'audio/mpeg';
 }
 
-/**
- * Gets the file extension when extractAudio option is used.
- */
-export function getFileExtensionFromArgs(options?: {
-  extractAudio?: boolean;
-  audioFormat?: string;
-}): string | null {
-  if (!options?.extractAudio) {
-    return null;
-  }
-  return options.audioFormat || 'mp3';
+export function getFileExtensionFromArgs(options?: { extractAudio?: boolean; audioFormat?: string }): string | null {
+  return options?.extractAudio ? options.audioFormat || 'mp3' : null;
 }

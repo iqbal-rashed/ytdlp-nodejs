@@ -5,7 +5,6 @@
 
 import readline from 'readline';
 import { Colors, Style, color } from './style';
-
 /**
  * Creates a readline-based prompter.
  */
@@ -48,6 +47,8 @@ export async function promptText(
 
 /**
  * Prompts for yes/no confirmation.
+ * Enhanced to handle y/yes/n/no/q with default.
+ * See src/cli/prompts.ts:52
  */
 export async function promptConfirm(
   ask: (message: string) => Promise<string>,
@@ -63,6 +64,7 @@ export async function promptConfirm(
   if (value === 'q') return null;
   if (value === 'y' || value === 'yes') return true;
   if (value === 'n' || value === 'no') return false;
+  if (value === '') return initialValue;
   return initialValue;
 }
 
@@ -103,5 +105,60 @@ export async function promptSelect(
       return options[num - 1].value;
     }
     console.log(Style.error('Invalid selection. Please try again.'));
+  }
+}
+
+/**
+ * Prompts for multi-select checklist.
+ * Used for embed options, subtitle languages, etc.
+ * Enter comma-separated numbers e.g. "1,3" or space-separated "1 3".
+ * Returns array of selected values, empty array if skipped, null if quit.
+ * See src/cli/interactive.ts stepwise wizard Steps 5/6.
+ */
+export async function promptMultiSelect(
+  ask: (message: string) => Promise<string>,
+  message: string,
+  options: Array<{ value: string; label: string }>,
+): Promise<string[] | null> {
+  console.log(`\n${Style.title(message)}`);
+  options.forEach((option, index) => {
+    const prefix = `${index + 1}.`;
+    console.log(`  ${color(prefix, Colors.fg.green)} [ ] ${option.label} ${Style.muted(`(${option.value})`)}`);
+  });
+  console.log(Style.muted('  Enter numbers comma-separated (e.g. 1,3), empty to skip, q to quit'));
+  console.log('');
+
+  const prompt = `${Style.info('?')} Select: `;
+
+  while (true) {
+    process.stdout.write(prompt);
+    const raw = (await ask('')).trim();
+    if (raw.toLowerCase() === 'q') return null;
+    if (!raw) return [];
+
+    // Parse comma or space separated
+    const parts = raw
+      .split(/[,\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const selected: string[] = [];
+    let valid = true;
+    for (const p of parts) {
+      const num = Number(p);
+      if (!Number.isInteger(num) || num < 1 || num > options.length) {
+        valid = false;
+        break;
+      }
+      const val = options[num - 1].value;
+      if (!selected.includes(val)) selected.push(val);
+    }
+
+    if (!valid) {
+      console.log(Style.error(`Invalid selection "${raw}". Use numbers 1-${options.length} comma-separated.`));
+      continue;
+    }
+
+    return selected;
   }
 }
